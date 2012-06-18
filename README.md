@@ -1,4 +1,1 @@
-Backup
-======
-
-A WordPress backup plugin.
+readme.txt
