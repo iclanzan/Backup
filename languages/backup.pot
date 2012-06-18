@@ -1,0 +1,477 @@
+# Copyright (C) 2012 Backup
+# This file is distributed under the same license as the Backup package.
+msgid ""
+msgstr ""
+"Project-Id-Version: Backup 2.0\n"
+"Report-Msgid-Bugs-To: http://wordpress.org/tag/backup\n"
+"POT-Creation-Date: 2012-06-14 19:43:32+00:00\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"PO-Revision-Date: 2012-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+
+#: backup.php:219 page-options.php:53
+msgid "Weekly"
+msgstr ""
+
+#: backup.php:223 page-options.php:54
+msgid "Monthly"
+msgstr ""
+
+#: backup.php:256
+msgid "Database"
+msgstr ""
+
+#: backup.php:257
+msgid "Content"
+msgstr ""
+
+#: backup.php:258
+msgid "Uploads"
+msgstr ""
+
+#: backup.php:259
+msgid "Plugins"
+msgstr ""
+
+#: backup.php:260
+msgid "WordPress"
+msgstr ""
+
+#: backup.php:307
+msgid ""
+"Please enable OpenSSL in PHP. Backup needs it to communicate with Google "
+"Drive."
+msgstr ""
+
+#: backup.php:312
+msgid "Please enable SimpleXMLElement in PHP. Backup could not be activated."
+msgstr ""
+
+#: backup.php:471
+msgid "Overview"
+msgstr ""
+
+#: backup.php:472
+msgid "Backup for WordPress"
+msgstr ""
+
+#: backup.php:472
+msgid ""
+"Regularly backing up a website is one of the most important duties of a "
+"webmaster and its value is only truly appreciated when things go horribly "
+"wrong (hacked website, hardware failure, software errors)."
+msgstr ""
+
+#: backup.php:473
+msgid ""
+"WordPress is a wonderful platform to build not just blogs, but also rich, "
+"powerful websites and web apps. Backing up a WordPress website was never the "
+"easiest of tasks but it has become quite effortless with the help of the "
+"Backup plugin."
+msgstr ""
+
+#: backup.php:474
+msgid "Here are some of the features of the Backup plugin:"
+msgstr ""
+
+#: backup.php:475
+msgid "Backup any or all of your site's directories and files."
+msgstr ""
+
+#: backup.php:476
+msgid ""
+"Ability to fine-tune the contents of the backup archive by excluding "
+"specific files and folders."
+msgstr ""
+
+#: backup.php:477
+msgid "Create a database dump and add it to the backup."
+msgstr ""
+
+#: backup.php:478
+msgid "It can back up locally and on Google Drive."
+msgstr ""
+
+#: backup.php:479
+msgid "Supports automatic resuming of uploads to Google Drive."
+msgstr ""
+
+#: backup.php:480
+msgid ""
+"Rumor has it that support for uploading backups to other popular services is "
+"coming."
+msgstr ""
+
+#: backup.php:484
+msgid "Authorization"
+msgstr ""
+
+#: backup.php:485
+msgid ""
+"You can create a %1$sClient ID%2$s in the API Access section of your %3$s if "
+"you don't have one. A %1$sClient secret%2$s will also be generated for you "
+"as long as you select %4$sWeb Application%5$s as the application type."
+msgstr ""
+
+#: backup.php:486
+msgid "Make sure to add %s as the authorized redirect URI when asked."
+msgstr ""
+
+#: backup.php:490
+msgid "Backup settings"
+msgstr ""
+
+#: backup.php:491 page-options.php:23
+msgid "Local folder path"
+msgstr ""
+
+#: backup.php:491
+msgid ""
+"This is the path to the local filesystem directory where the plugin will "
+"store local backups, logs and other files it creates. The path has to be "
+"given absolute or relative to the WordPress root directory. Make sure the "
+"path you specify can be created by the plugin, otherwise you have to "
+"manually create it and set the right permissions for the plugin to write to "
+"it."
+msgstr ""
+
+#: backup.php:492 page-options.php:31
+msgid "Drive folder ID"
+msgstr ""
+
+#: backup.php:492
+msgid ""
+"This is the resource ID of the Google Drive folder where backups will be "
+"uploaded. To get a folder's ID navigate to that folder in Google Drive and "
+"copy the ID from your browser's address bar. It is the part that comes after "
+"%s."
+msgstr ""
+
+#: backup.php:493 page-options.php:39
+msgid "Store a maximum of"
+msgstr ""
+
+#: backup.php:493
+msgid ""
+"You can choose to store as many backups as you want both locally and on "
+"Google Drive given you have enough free space. Once the maximum number of "
+"backups is reached, the oldest backups will get purged when creating new "
+"ones."
+msgstr ""
+
+#: backup.php:494 page-options.php:48
+msgid "When to back up"
+msgstr ""
+
+#: backup.php:494
+msgid ""
+"Selecting a backup frequency other than 'never' will schedule backups to be "
+"performed using the WordPress cron. "
+msgstr ""
+
+#: backup.php:494
+msgid ""
+"If you want to do backups using a real cron job, you should leave 'never' "
+"selected and use the URI %s to set up the cron job."
+msgstr ""
+
+#: backup.php:498
+msgid "Advanced settings"
+msgstr ""
+
+#: backup.php:499 backup.php:591
+msgid "Backup options"
+msgstr ""
+
+#: backup.php:500 backup.php:595
+msgid "What to back up"
+msgstr ""
+
+#: backup.php:500
+msgid ""
+"By default the plugin backs up the content, uploads and plugins folders as "
+"well as the database. You can also select to back up the entire WordPress "
+"installation directory if you like."
+msgstr ""
+
+#: backup.php:501
+msgid ""
+"On a default WordPress install the uploads and plugins folders are found "
+"inside the content folder, but they can be set up to be anywhere. Also the "
+"entire content directory can live outside the WordPress root."
+msgstr ""
+
+#: backup.php:502 backup.php:607
+msgid "Exclude list"
+msgstr ""
+
+#: backup.php:502
+msgid ""
+"This is a comma separated list of files and paths to exclude from backups. "
+"Paths can be absolute or relative to the WordPress root directory. Please "
+"note that in order to exclude a directory named %1$s that is a subdirectory "
+"of the WordPress root directory you would have to input %2$s otherwise all "
+"files and directories named %1$s will be excluded."
+msgstr ""
+
+#: backup.php:503 backup.php:614
+msgid "Upload options"
+msgstr ""
+
+#: backup.php:504 backup.php:618
+msgid "Chunk size"
+msgstr ""
+
+#: backup.php:504
+msgid ""
+"Files are split and uploaded to Google Drive in chunks of this size. Only a "
+"size that is a multiple of 0.5 MB (512 KB) is valid. I only recommend "
+"setting this to a higher value if you have a fast upload speed but take note "
+"that the PHP will use that much more memory."
+msgstr ""
+
+#: backup.php:505 backup.php:622
+msgid "Time limit"
+msgstr ""
+
+#: backup.php:505
+msgid ""
+"If possible this will be set as the time limit for uploading a file to "
+"Google Drive. Just before reaching this limit, the upload stops and an "
+"upload resume is scheduled."
+msgstr ""
+
+#: backup.php:509
+msgid "For more information"
+msgstr ""
+
+#: backup.php:510
+msgid "Plugin homepage"
+msgstr ""
+
+#: backup.php:511
+msgid "Plugin page on WordPress.org"
+msgstr ""
+
+#: backup.php:512
+msgid ""
+"If you find this plugin useful and want to support its development please "
+"consider %smaking a donation%s."
+msgstr ""
+
+#: backup.php:517
+msgid ""
+"The local path '%s' is not writable. Please change the permissions or choose "
+"another directory."
+msgstr ""
+
+#: backup.php:534
+msgid ""
+"Before backups can be uploaded to Google Drive, you need to authorize the "
+"plugin and give it permission to make changes on your behalf."
+msgstr ""
+
+#: backup.php:536
+msgid "Client ID"
+msgstr ""
+
+#: backup.php:539
+msgid "Client secret"
+msgstr ""
+
+#: backup.php:543
+msgid "Authorize"
+msgstr ""
+
+#: backup.php:547
+msgid ""
+"Authorization to use Google Drive has been granted. You can revoke it at any "
+"time by clicking the button below."
+msgstr ""
+
+#: backup.php:548
+msgid "Revoke authorization"
+msgstr ""
+
+#: backup.php:556
+msgid "Current date and time:"
+msgstr ""
+
+#. translators: date format, see http:php.net/date
+#: backup.php:558 backup.php:564 backup.php:572
+msgid "M j, Y \\a\\t H:i"
+msgstr ""
+
+#: backup.php:560
+msgid "Most recent backup:"
+msgstr ""
+
+#: backup.php:566 backup.php:574
+msgid "never"
+msgstr ""
+
+#: backup.php:568
+msgid "Next scheduled backup:"
+msgstr ""
+
+#: backup.php:577
+msgid "Google Drive quota:"
+msgstr ""
+
+#: backup.php:578
+msgid "%s of %s used"
+msgstr ""
+
+#: backup.php:581
+msgid "Manual backup URL:"
+msgstr ""
+
+#: backup.php:608
+msgid "Comma separated paths to exclude."
+msgstr ""
+
+#: backup.php:619
+msgid "MB"
+msgstr ""
+
+#: backup.php:623
+msgid "seconds"
+msgstr ""
+
+#: backup.php:660
+msgid "There is no log file to display or the file is empty."
+msgstr ""
+
+#: backup.php:672 backup.php:679
+msgid "You were caught trying to do an illegal operation."
+msgstr ""
+
+#: backup.php:672 backup.php:679
+msgid "Illegal operation"
+msgstr ""
+
+#: backup.php:689
+msgid "The chunk size must be a multiple of 0.5 MB."
+msgstr ""
+
+#: backup.php:698
+msgid "The upload time limit must be at least 5 seconds."
+msgstr ""
+
+#: backup.php:705
+msgid "The number of local backups to store must be a positive integer."
+msgstr ""
+
+#: backup.php:709
+msgid "The number of Drive backups to store must be a positive integer."
+msgstr ""
+
+#: backup.php:711
+msgid "You need to store at least one local or Drive backup."
+msgstr ""
+
+#: backup.php:719
+msgid "You need to store at least one local backup."
+msgstr ""
+
+#: backup.php:728
+msgid ""
+"Could not create directory %s. You might want to create it manually and set "
+"the right permissions. "
+msgstr ""
+
+#: backup.php:730
+msgid "Could not create log file. Please check permissions."
+msgstr ""
+
+#: backup.php:746
+msgid "All changes were saved successfully."
+msgstr ""
+
+#: backup.php:1013
+msgid "Authorization failed!"
+msgstr ""
+
+#: backup.php:1018
+msgid "Authorization was successful."
+msgstr ""
+
+#: backup.php:1029
+msgid "Could not revoke authorization!"
+msgstr ""
+
+#: backup.php:1035
+msgid "Authorization has been revoked."
+msgstr ""
+
+#: backup.php:1041
+msgid ""
+"You need to specify a 'Client ID' and a 'Client secret' in order to "
+"authorize the Backup plugin."
+msgstr ""
+
+#: page-options.php:7
+msgid "Backup Settings"
+msgstr ""
+
+#: page-options.php:26
+msgid ""
+"Local backups as well as other files created by the plugin will be stored on "
+"this path."
+msgstr ""
+
+#: page-options.php:34
+msgid ""
+"Backups will be uploaded to this folder. Leave empty to save in root folder."
+msgstr ""
+
+#: page-options.php:41
+msgid "backup(s) locally"
+msgstr ""
+
+#: page-options.php:43
+msgid "and"
+msgstr ""
+
+#: page-options.php:43
+msgid "backup(s) on Google Drive"
+msgstr ""
+
+#: page-options.php:51
+msgid "Never"
+msgstr ""
+
+#: page-options.php:52
+msgid "Daily"
+msgstr ""
+
+#: page-options.php:56
+msgid "Select <kbd>never</kbd> if you want to add a cron job to do backups."
+msgstr ""
+
+#: page-options.php:63
+msgid "Save changes"
+msgstr ""
+
+#. Plugin Name of the plugin/theme
+msgid "Backup"
+msgstr ""
+
+#. Plugin URI of the plugin/theme
+msgid "http://hel.io/wordpress/backup/"
+msgstr ""
+
+#. Description of the plugin/theme
+msgid "Backup your WordPress website to Google Drive."
+msgstr ""
+
+#. Author of the plugin/theme
+msgid "Sorin Iclanzan"
+msgstr ""
+
+#. Author URI of the plugin/theme
+msgid "http://hel.io/"
+msgstr ""
