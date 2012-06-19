@@ -218,7 +218,7 @@ class Backup {
                 'interval' => 604800,
                 'display' => __('Weekly', $this->text_domain) 
             ),
-            'montly' => array(
+            'monthly' => array(
                 'interval' => 2592000,
                 'display' => __('Monthly', $this->text_domain)
             )
