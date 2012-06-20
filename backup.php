@@ -99,7 +99,7 @@ class Backup {
      * @var GDocs
      * @access private
      */
-    private $docs;
+    private $gdocs;
 
     /**
      * Stores an instance of GOAuth.
