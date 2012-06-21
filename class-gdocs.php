@@ -458,7 +458,9 @@ class GDocs {
 	 * @return mixed  Returns an array with information about the item to be resumed or FALSE if there is no resumable item.
 	 */
 	public function get_resume_item() {
-		return $this->resume_list[$this->get_resume_item_id()];
+		if ( $id = $this->get_resume_item_id() )
+			return $this->resume_list[$id];
+		return false;
 	}
 
 	/**
@@ -536,8 +538,21 @@ class GDocs {
 	}
 
 	/**
+	 * Get the upload speed recorded on the last upload performed.
+	 *
+	 * @access public
+	 * @return mixed  Returns the upload speed in bytes/second or FALSE.
+	 */
+	public function get_upload_speed() {
+		if ( isset( $this->timer['cycle'] ) )
+			return $this->chunk_size / $this->timer['cycle'];
+		return false;
+	}
+
+	/**
 	 * Checks if the script is nearing max execution time.
 	 * 
+	 * @access private
 	 * @return boolean Returns TRUE if nearing max execution time, FALSE otherwise.
 	 */
 	private function approaching_timeout() {
@@ -547,11 +562,14 @@ class GDocs {
 	}
 
 	/**
-	 * Returns the time taken for an upload to complete
-	 * 
-	 * @return float The number of seconds accurate to the microsecond it took for the upload to complete
+	 * Returns the time taken for an upload to complete.
+	 *
+	 * @access public
+	 * @return mixed  Returns a float number of seconds if an upload has been completed, FALSE otherwise.
 	 */
 	public function time_taken() {
-		return $this->timer['delta'];
+		if ( isset( $this->timer['delta'] ) )
+			return $this->timer['delta'];
+		return false;
 	}
 }
