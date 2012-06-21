@@ -182,7 +182,7 @@ function _zip_create_pclzip( $sources, $destination, $exclude = array() ) {
                 return new WP_Error('pclzip', $zip->errorInfo(true));
         }
         elseif ( @is_file($source) ) {
-            $res = $zip->add($source, parent_dir($source));
+            $res = $zip->add($source, PCLZIP_OPT_REMOVE_PATH, parent_dir($source));
             if ( 0 == $res )
                 return new WP_Error('pclzip', $zip->errorInfo(true));
         }
