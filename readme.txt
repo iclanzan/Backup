@@ -46,6 +46,14 @@ Apart from not being able to purge backups from Google Drive, Backup should work
 
 == Changelog ==
 
+= 2.0.1 =
+* Fixed database dump not getting added to the backup archive in some circumstances.
+* Fixed not setting the time limit and chunk size when resuming uploads.
+* Fixed local backups not being deleted after a failed upload.
+* Fixed a bug in the GDocs class.
+* Now logging upload speeds.
+* Other minor bug fixes.
+
 = 2.0 =
 * Rewrote 95% of the plugin to make it more compatible with older PHP versions, more portable and cleaner. It now uses classes and functions already found in WordPress where possible.
 * Interrupted backup uploads to Google Drive will resume automatically on the next WordPress load.
