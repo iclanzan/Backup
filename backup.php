@@ -862,9 +862,8 @@ class Backup {
                 $this->log('NOTICE', 'Attempting to upload archive to Google Drive.');
                 $id = $this->gdocs->upload_file($file_path, $file_name, $this->options['drive_folder']);
                 if ( is_wp_error($id) ) {
-                    $err = $id->get_error_message('resumable');
-                    if ( ! empty($err) ) { // If we are here it means we have a chance at resuming the download so schedule resume.
-                        $this->log("WARNING", $err . ' The upload speed was around ' . size_format( $this->gdocs->get_upload_speed() ) . '/s.');
+                    if ( $this->gdocs->is_resumable() ) { // If we are here it means we have a chance at resuming the download so schedule resume.
+                        $this->log("WARNING", $id->get_error_message() . ' The upload speed was around ' . size_format( $this->gdocs->get_upload_speed() ) . '/s.');
                         wp_schedule_single_event($this->time, 'backup_resume');
                     }
                     else {
@@ -927,9 +926,8 @@ class Backup {
         $this->log('NOTICE', 'Resuming upload of ' . $file['title'] . '.');
         $id   = $this->gdocs->resume_upload();
         if ( is_wp_error($id) ) {
-            $err = $id->get_error_message('resumable');
-            if ( ! empty($err) ) {
-                $this->log("WARNING", $err . ' The upload speed was around ' . size_format( $this->gdocs->get_upload_speed() ) . '/s.');
+            if ( $this->is_resumable() ) {
+                $this->log("WARNING", $id->get_error_message() . ' The upload speed was around ' . size_format( $this->gdocs->get_upload_speed() ) . '/s.');
                 wp_schedule_single_event($this->time, 'backup_resume');
             }
             else {
