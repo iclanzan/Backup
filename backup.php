@@ -7,6 +7,8 @@ Description: Backup your WordPress website to Google Drive.
 Author: Sorin Iclanzan
 Author URI: http://hel.io/
 License: GPL3
+Text Domain: backup
+Domain Path: /languages
 */
 
 /*  Copyright 2012 Sorin Iclanzan  (email : sorin@iclanzan.com)
@@ -323,7 +325,7 @@ class Backup {
         add_option('backup_options', $this->options, '', 'no');
 
         // We call this here just to get the page hook
-        $this->pagehook = add_options_page('Backup Settings', 'Backup', 'manage_options', 'backup', array(&$this, 'options_page'));
+        $this->pagehook = add_options_page(_('Backup Settings', $this->text_domain), __('Backup', $this->text_domain), 'manage_options', 'backup', array(&$this, 'options_page'));
         
         if ( ! $this->user_id )
             $this->user_id = get_current_user_id();
@@ -417,7 +419,7 @@ class Backup {
         if ( $file != plugin_basename(__FILE__))
             return $links;
 
-        $settings_link = '<a href="options-general.php?page=backup">Settings</a>';
+        $settings_link = sprintf( '<a href="options-general.php?page=backup">%s</a>', __( 'Settings', $this->text_domain ) );;
 
         array_unshift($links, $settings_link);
 
@@ -442,7 +444,7 @@ class Backup {
      * Action - Adds options page in the admin menu.
      */
     function backup_menu() {
-        $this->pagehook = add_options_page('Backup Settings', 'Backup', 'manage_options', 'backup', array(&$this, 'options_page'));
+        $this->pagehook = add_options_page(__('Backup Settings', $this->text_domain), __('Backup', $this->text_domain), 'manage_options', 'backup', array(&$this, 'options_page'));
         // Hook to update options
         add_action('load-'.$this->pagehook, array(&$this, 'options_update'));
         // Hook to add metaboxes
@@ -459,10 +461,10 @@ class Backup {
         wp_enqueue_script('postbox');
 
         // Add the metaboxes
-        add_meta_box('metabox-authorization', 'Authorization', array(&$this, 'metabox_authorization_content'), $this->pagehook, 'side', 'core');
-        add_meta_box('metabox-status', 'Status', array(&$this, 'metabox_status_content'), $this->pagehook, 'side', 'core');
-        add_meta_box('metabox-advanced', 'Advanced', array(&$this, 'metabox_advanced_content'), $this->pagehook, 'normal', 'core');
-        add_meta_box('metabox-logfile', 'Log File', array(&$this, 'metabox_logfile_content'), $this->pagehook, 'advanced', 'core');
+        add_meta_box('metabox-authorization', __('Authorization', $this->text_domain), array(&$this, 'metabox_authorization_content'), $this->pagehook, 'side', 'core');
+        add_meta_box('metabox-status', __('Status', $this->text_domain), array(&$this, 'metabox_status_content'), $this->pagehook, 'side', 'core');
+        add_meta_box('metabox-advanced', __('Advanced', $this->text_domain), array(&$this, 'metabox_advanced_content'), $this->pagehook, 'normal', 'core');
+        add_meta_box('metabox-logfile', __('Log File', $this->text_domain), array(&$this, 'metabox_logfile_content'), $this->pagehook, 'advanced', 'core');
 
         // Add help tabs and help sidebar
         $screen = get_current_screen();
