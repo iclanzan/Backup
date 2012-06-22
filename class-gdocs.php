@@ -407,7 +407,7 @@ class GDocs {
 		set_time_limit($this->time_limit);
 
 		// Open file for reading.
-		if ( $this->file_handle = fopen( $file, "rb" ) )
+		if ( !$this->file_handle = fopen( $file, "rb" ) )
 			return new WP_Error( 'open_error', "Could not open file '" . $file . "' for reading." );
 
         return $this->upload_chunks( $file, 0 );          

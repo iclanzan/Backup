@@ -50,7 +50,7 @@ Apart from not being able to purge backups from Google Drive, Backup should work
 * Fixed database dump not getting added to the backup archive in some circumstances.
 * Fixed not setting the time limit and chunk size when resuming uploads.
 * Fixed local backups not being deleted after a failed upload.
-* Fixed a bug in the GDocs class.
+* Fixed some bugs in the GDocs class and optimized chunk reading.
 * Now logging upload speeds.
 * Other minor bug fixes.
 

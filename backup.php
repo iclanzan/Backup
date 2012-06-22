@@ -807,7 +807,7 @@ class Backup {
         
         // Create database dump sql file.
         if ( in_array('database', $this->options['source_list']) ) {
-            $this->log('NOTICE', 'Attempting to dump database to ' . $this->dump_file);
+            $this->log('NOTICE', "Attempting to dump database to '" . $this->dump_file . "'.");
             $dump_time = db_dump($this->dump_file);
 
             if ( is_wp_error($dump_time) ) {
@@ -835,7 +835,7 @@ class Backup {
                     unset($sources[$j]);
 
         // Create archive from all enabled sources.
-        $this->log('NOTICE', 'Attempting to create archive ' . $file_path);
+        $this->log('NOTICE', "Attempting to create archive '" . $file_path . "'.");
         $zip_time = zip($sources, $file_path, $exclude);
 
         if ( is_wp_error($zip_time) ) {
@@ -859,7 +859,7 @@ class Backup {
                 $this->gdocs->set_option('chunk_size', $this->options['chunk_size']);
                 $this->gdocs->set_option('time_limit', $this->options['time_limit']);
 
-                $this->log('NOTICE', 'Attempting to upload archive to Google Drive');
+                $this->log('NOTICE', 'Attempting to upload archive to Google Drive.');
                 $id = $this->gdocs->upload_file($file_path, $file_name, $this->options['drive_folder']);
                 if ( is_wp_error($id) ) {
                     $err = $id->get_error_message('resumable');
