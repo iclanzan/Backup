@@ -830,7 +830,8 @@ class Backup {
         $count = count($sources);
         for ( $i = 0; $i < $count; $i++ )
             for ( $j = 0; $j < $count; $j++ )
-                if ( $j != $i && isset($sources[$i]) && isset($sources[$j]) && is_subdir($sources[$j], $sources[$i]) ) 
+                if ( $j != $i && isset($sources[$i]) && isset($sources[$j]) && 
+                    is_subdir($sources[$j], $sources[$i]) && $this->sources['database']['path'] != $sources[$j] )
                     unset($sources[$j]);
 
         // Create archive from all enabled sources.
