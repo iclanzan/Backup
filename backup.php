@@ -1,7 +1,7 @@
 <?php
 /*
 Plugin Name: Backup
-Version: 2.0
+Version: 2.0.1
 Plugin URI: http://hel.io/wordpress/backup/
 Description: Backup your WordPress website to Google Drive.
 Author: Sorin Iclanzan
