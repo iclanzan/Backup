@@ -12,7 +12,7 @@ Make backups of your Wordpress site to Google Drive.
 
 == Description ==
 
-Version 2.1 is out and it's full of improvements and new features!
+Version 2.0 is out and it's full of improvements and new features!
 
 If you use this plugin and find it useful please consider [donating](http://hel.io/donate/ "Make a donation for your favorite WordPress plugin."). I have invested (and continue to do so) a lot of time and effort into making this a useful and polished product even though at the moment I have no source of income. Even a small contribution helps a lot.
 
