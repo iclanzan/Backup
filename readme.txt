@@ -4,7 +4,7 @@ Donate link: http://hel.io/donate/
 Tags: backup, back up, Google Drive, Drive backup, WordPress backup
 Requires at least: 3.4
 Tested up to: 3.4
-Stable tag: 2.0
+Stable tag: 2.1
 License: GPLv3
 License URI: http://www.gnu.org/licenses/gpl.html
 
@@ -12,7 +12,7 @@ Make backups of your Wordpress site to Google Drive.
 
 == Description ==
 
-Version 2.0 is out and it's full of improvements and new features!
+Version 2.1 is out and it's full of improvements and new features!
 
 If you use this plugin and find it useful please consider [donating](http://hel.io/donate/ "Make a donation for your favorite WordPress plugin."). I have invested (and continue to do so) a lot of time and effort into making this a useful and polished product even though at the moment I have no source of income. Even a small contribution helps a lot.
 
@@ -45,6 +45,10 @@ Apart from not being able to purge backups from Google Drive, Backup should work
 1. Screenshot of the Backup settings page.
 
 == Changelog ==
+
+= 2.1 =
+* Added function __() where it is not 
+* Added Russian localization
 
 = 2.0 =
 * Rewrote 95% of the plugin to make it more compatible with older PHP versions, more portable and cleaner. It now uses classes and functions already found in WordPress where possible.
