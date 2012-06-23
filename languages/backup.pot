@@ -104,6 +104,10 @@ msgid ""
 msgstr ""
 
 #: backup.php:476
+msgid "Backup features"
+msgstr ""
+
+#: backup.php:476
 msgid "Here are some of the features of the Backup plugin:"
 msgstr ""
 
