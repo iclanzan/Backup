@@ -456,7 +456,7 @@ class GDocs {
 		set_time_limit($this->time_limit);
 
 		// Open file for reading.
-		if ( $this->file_handle = fopen( $this->resume_list[$id]['path'], "rb" ) )
+		if ( !$this->file_handle = fopen( $this->resume_list[$id]['path'], "rb" ) )
 			return new WP_Error( 'open_error', "Could not open file '" . $this->resume_list[$id]['path'] . "' for reading." );
 
 		return $this->upload_chunks($id, $pointer);
