@@ -333,7 +333,7 @@ class Backup {
         // Set the default order of the metaboxes.
         if ( ! get_user_meta($this->user_id, "meta-box-order_".$this->pagehook, true) ) {
             $meta_value = array(
-                'side' => 'metabox-authorization,metabox-status',
+                'side' => 'metabox-authorization,metabox-status,metabox-action',
                 'normal' => 'metabox-advanced',
                 'advanced' => 'metabox-logfile',
             );
@@ -348,9 +348,9 @@ class Backup {
 
         // Set the default hidden metaboxes.
         if ( ! get_user_meta($this->user_id, "metaboxhidden_".$this->pagehook, true) ) {
-            $meta_value = array('metabox-logfile');
+          $meta_value = array('metabox-logfile','metabox-action');
             update_user_meta($this->user_id, "metaboxhidden_".$this->pagehook, $meta_value);
-        }
+        } 
 
         // Set the default number of columns.
         if ( ! get_user_meta($this->user_id, "screen_layout_".$this->pagehook, true) ) {
@@ -465,6 +465,7 @@ class Backup {
         add_meta_box('metabox-status', __('Status', $this->text_domain), array(&$this, 'metabox_status_content'), $this->pagehook, 'side', 'core');
         add_meta_box('metabox-advanced', __('Advanced', $this->text_domain), array(&$this, 'metabox_advanced_content'), $this->pagehook, 'normal', 'core');
         add_meta_box('metabox-logfile', __('Log File', $this->text_domain), array(&$this, 'metabox_logfile_content'), $this->pagehook, 'advanced', 'core');
+        add_meta_box('metabox-action', __('Actions', $this->text_domain), array(&$this, 'metabox_action_content'), $this->pagehook, 'action', 'core');
 
         // Add help tabs and help sidebar
         $screen = get_current_screen();
@@ -576,11 +577,17 @@ class Backup {
                 _e('never', $this->text_domain);
         echo '</strong></div>';
         if ( $this->options['quota_used'] ) {
-            echo '<div class="misc-pub-section">' . __('Google Drive quota:', $this->text_domain) . '<br/><strong>';
+            echo '<div class="misc-pub-section misc-pub-section-last">' . __('Google Drive quota:', $this->text_domain) . '<br/><strong>';
             printf(__('%s of %s used', $this->text_domain), size_format($this->options['quota_used']), size_format($this->options['quota_total'] ));
             echo '</strong></div>';
         }
-        echo '<div class="misc-pub-section misc-pub-section-last">' . __('Manual backup URL:', $this->text_domain) . '<br/><kbd>' . home_url('?backup') . '</kbd></div><div class="clear"></div>';
+        // echo '<div class="misc-pub-section misc-pub-section-last">' . __('Manual backup URL:', $this->text_domain) . '<br/><kbd>' . home_url('?backup') . '</kbd></div><div class="clear"></div>';
+    }
+    /**
+     * Actions meta box.
+     */
+    function metabox_action_content( $data ) {
+      echo '<a href="' . home_url('?backup') . '">' . __('Make backup manual', $this->text_domain) . '</a>';
     }
 
     /**
