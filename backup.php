@@ -925,7 +925,7 @@ class Backup {
         $this->gdocs->set_option('chunk_size', $this->options['chunk_size']);
         $this->gdocs->set_option('time_limit', $this->options['time_limit']);
 
-        $this->log('NOTICE', 'Resuming upload of ' . $file['title'] . '.');
+        $this->log('NOTICE', "Resuming upload of '" . $file['title'] . "'.");
         $id   = $this->gdocs->resume_upload();
         if ( is_wp_error($id) ) {
             if ( $this->gdocs->is_resumable() ) {
@@ -961,7 +961,7 @@ class Backup {
                 if ( is_wp_error($result) )
                     $this->log_wp_error($result);
                 else
-                    $this->log('NOTICE', 'Deleted Google Drive file ' . $r);
+                    $this->log('NOTICE', "Deleted Google Drive file '" . $r . "'.");
             }
         return new WP_Error('missing_gdocs', "An instance of GDocs is needed to delete Google Drive resources.");   
     }
@@ -972,9 +972,9 @@ class Backup {
     private function purge_local_files() {
         while ( count($this->options['local_files']) > $this->options['local_number'] )
             if ( delete_path($f = array_shift($this->options['local_files'])) )
-                $this->log('NOTICE', 'Purged backup file ' . $f);
+                $this->log('NOTICE', "Purged backup file '" . $f . "'.");
             else    
-                $this->log('WARNING', 'Could not delete file ' . $f);
+                $this->log('WARNING', "Could not delete file '" . $f . "'.");
     }
 
     /**
