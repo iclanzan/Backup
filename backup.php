@@ -928,7 +928,7 @@ class Backup {
         $this->log('NOTICE', 'Resuming upload of ' . $file['title'] . '.');
         $id   = $this->gdocs->resume_upload();
         if ( is_wp_error($id) ) {
-            if ( $this->is_resumable() ) {
+            if ( $this->gdocs->is_resumable() ) {
                 $this->log("WARNING", $id->get_error_message() . ' The upload speed was around ' . size_format( $this->gdocs->get_upload_speed() ) . '/s.');
                 wp_schedule_single_event($this->time, 'backup_resume');
             }
