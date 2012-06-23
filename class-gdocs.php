@@ -421,7 +421,7 @@ class GDocs {
 	 * @return mixed   Returns Google Docs resource ID on success, an instance of WP_Error on failure.
 	 */
 	public function resume_upload() {
-		$id = $this->get_resume_item_id(); error_log($id."\n".var_export($this->resume_list,true));
+		$id = $this->get_resume_item_id();
 		if( !$id )
 			return new WP_Error("no_items", "There are no uploads that need to be resumed.");
 		if ( ! @is_readable($this->resume_list[$id]['path']) ) {
