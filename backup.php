@@ -325,7 +325,7 @@ class Backup {
         add_option('backup_options', $this->options, '', 'no');
 
         // We call this here just to get the page hook
-        $this->pagehook = add_options_page(_('Backup Settings', $this->text_domain), __('Backup', $this->text_domain), 'manage_options', 'backup', array(&$this, 'options_page'));
+        $this->pagehook = add_options_page(__('Backup Settings', $this->text_domain), __('Backup', $this->text_domain), 'manage_options', 'backup', array(&$this, 'options_page'));
         
         if ( ! $this->user_id )
             $this->user_id = get_current_user_id();

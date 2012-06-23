@@ -2,9 +2,9 @@
 # This file is distributed under the same license as the Backup package.
 msgid ""
 msgstr ""
-"Project-Id-Version: Backup 2.0\n"
+"Project-Id-Version: Backup 2.1\n"
 "Report-Msgid-Bugs-To: http://wordpress.org/tag/backup\n"
-"POT-Creation-Date: 2012-06-22 22:46:07+00:00\n"
+"POT-Creation-Date: 2012-06-23 11:06:22+00:00\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -54,7 +54,7 @@ msgstr ""
 msgid "Backup Settings"
 msgstr ""
 
-#. #-#-#-#-#  backup.pot (Backup 2.0)  #-#-#-#-#
+#. #-#-#-#-#  backup.pot (Backup 2.1)  #-#-#-#-#
 #. Plugin Name of the plugin/theme
 #: backup.php:328 backup.php:447
 msgid "Backup"
