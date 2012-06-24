@@ -4,11 +4,11 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Backup 2.1\n"
 "Report-Msgid-Bugs-To: http://wordpress.org/tag/backup\n"
-"POT-Creation-Date: 2012-06-23 11:06:22+00:00\n"
+"POT-Creation-Date: 2012-06-24 08:55:11+00:00\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"PO-Revision-Date: 2012-06-24 00:20+0300\n"
+"PO-Revision-Date: 2012-06-24 23:45+0300\n"
 "Last-Translator: Sergey Yakovlev <sadhooklay@gmail.com>\n"
 "Language-Team: Sergey Yakovlev <sadhooklay@gmail.com>\n"
 "Plural-Forms: nplurals=3; plural=n%100/10==1 ? 2 : n%10==1 ? 0 : (n+9)%10>3 ? 2 : 1;\n"
@@ -51,11 +51,11 @@ msgstr "Всего сайта"
 
 #: backup.php:309
 msgid "Please enable OpenSSL in PHP. Backup needs it to communicate with Google Drive."
-msgstr ""
+msgstr "Пожалуйста включите OpenSSL в PHP. Это требуется плагину резервного копирования для соединения с Диском  Google."
 
 #: backup.php:314
 msgid "Please enable SimpleXMLElement in PHP. Backup could not be activated."
-msgstr ""
+msgstr "Пожалуйста включите SimpleXMLElement в PHP. Резервное копирование не может быть запущено."
 
 #: backup.php:328
 #: backup.php:447
@@ -75,7 +75,7 @@ msgid "Settings"
 msgstr "Настройка"
 
 #: backup.php:464
-#: backup.php:486
+#: backup.php:487
 msgid "Authorization"
 msgstr "Авторизация"
 
@@ -89,329 +89,325 @@ msgstr "Дополнительно"
 
 #: backup.php:467
 msgid "Log File"
-msgstr "Журнал"
+msgstr "Файл журнала"
 
-#: backup.php:473
-msgid "Overview"
-msgstr "Введение"
+#: backup.php:468
+msgid "Actions"
+msgstr "Действия"
 
 #: backup.php:474
+msgid "Overview"
+msgstr "Обзор"
+
+#: backup.php:475
 msgid "Backup for WordPress"
 msgstr "Резервное копирование WordPress"
 
-#: backup.php:474
-msgid "Regularly backing up a website is one of the most important duties of a webmaster and its value is only truly appreciated when things go horribly wrong (hacked website, hardware failure, software errors)."
-msgstr ""
-
 #: backup.php:475
-msgid "WordPress is a wonderful platform to build not just blogs, but also rich, powerful websites and web apps. Backing up a WordPress website was never the easiest of tasks but it has become quite effortless with the help of the Backup plugin."
-msgstr ""
+msgid "Regularly backing up a website is one of the most important duties of a webmaster and its value is only truly appreciated when things go horribly wrong (hacked website, hardware failure, software errors)."
+msgstr "Регулярное резервное копирование сайта является одной из самых важных обязанностей веб-мастера и её значение по-настоящему оценивают только тогда, когда дела идут ужасно плохо (взломанный сайт, аппаратные сбои, программные ошибки)."
 
 #: backup.php:476
+msgid "WordPress is a wonderful platform to build not just blogs, but also rich, powerful websites and web apps. Backing up a WordPress website was never the easiest of tasks but it has become quite effortless with the help of the Backup plugin."
+msgstr "WordPress является прекрасной площадкой для создания не только блогов, но и богатых, мощных сайтов и веб-приложений. Резервное копирование WordPress-сайта никогда не было простой задачей, но она стала довольно легкой с помощью плагина Backup."
+
+#: backup.php:477
 msgid "Backup features"
 msgstr "Возможности резервного копирования"
 
-#: backup.php:476
-msgid "Here are some of the features of the Backup plugin:"
-msgstr ""
-
 #: backup.php:477
-msgid "Backup any or all of your site's directories and files."
-msgstr ""
+msgid "Here are some of the features of the Backup plugin:"
+msgstr "Вот некоторые из особенностей плагина Backup:"
 
 #: backup.php:478
-msgid "Ability to fine-tune the contents of the backup archive by excluding specific files and folders."
-msgstr ""
+msgid "Backup any or all of your site's directories and files."
+msgstr "Резервное копирование некоторых или всех папок и фалов вашего сайта."
 
 #: backup.php:479
-msgid "Create a database dump and add it to the backup."
-msgstr ""
+msgid "Ability to fine-tune the contents of the backup archive by excluding specific files and folders."
+msgstr "Возможность тонкой настройки содержимого архива путем исключения отдельных файлов и папок."
 
 #: backup.php:480
-msgid "It can back up locally and on Google Drive."
-msgstr ""
+msgid "Create a database dump and add it to the backup."
+msgstr "Создание дампа базы данных и добавление его в архив резервной копии."
 
 #: backup.php:481
-msgid "Supports automatic resuming of uploads to Google Drive."
-msgstr ""
+msgid "It can back up locally and on Google Drive."
+msgstr "Может быть запущено для создания резервной копии как локально, так и на Диске Google."
 
 #: backup.php:482
-msgid "Rumor has it that support for uploading backups to other popular services is coming."
-msgstr ""
+msgid "Supports automatic resuming of uploads to Google Drive."
+msgstr "Поддерживается автоматическое возобновление закачек в Диск Google."
 
-#: backup.php:487
+#: backup.php:483
+msgid "Rumor has it that support for uploading backups to other popular services is coming."
+msgstr "Ходят слухи, что грядет поддержка загрузки резервных копий в другие популярные сервисы."
+
+#: backup.php:488
 msgid "You can create a %1$sClient ID%2$s in the API Access section of your %3$s if you don't have one. A %1$sClient secret%2$s will also be generated for you as long as you select %4$sWeb Application%5$s as the application type."
 msgstr ""
 
-#: backup.php:488
+#: backup.php:489
 msgid "Make sure to add %s as the authorized redirect URI when asked."
 msgstr ""
 
-#: backup.php:492
+#: backup.php:493
 msgid "Backup settings"
 msgstr "Параметры резервного копирования"
 
-#: backup.php:493
+#: backup.php:494
 #: page-options.php:23
 msgid "Local folder path"
 msgstr "Локальный путь"
 
-#: backup.php:493
+#: backup.php:494
 msgid "This is the path to the local filesystem directory where the plugin will store local backups, logs and other files it creates. The path has to be given absolute or relative to the WordPress root directory. Make sure the path you specify can be created by the plugin, otherwise you have to manually create it and set the right permissions for the plugin to write to it."
 msgstr ""
 
-#: backup.php:494
+#: backup.php:495
 #: page-options.php:31
-#, fuzzy
 msgid "Drive folder ID"
-msgstr "изображение UFRaw ID"
+msgstr "ID папки Диска"
 
-#: backup.php:494
+#: backup.php:495
 msgid "This is the resource ID of the Google Drive folder where backups will be uploaded. To get a folder's ID navigate to that folder in Google Drive and copy the ID from your browser's address bar. It is the part that comes after %s."
 msgstr ""
 
-#: backup.php:495
+#: backup.php:496
 #: page-options.php:39
 msgid "Store a maximum of"
 msgstr "Хранить не более"
 
-#: backup.php:495
+#: backup.php:496
 msgid "You can choose to store as many backups as you want both locally and on Google Drive given you have enough free space. Once the maximum number of backups is reached, the oldest backups will get purged when creating new ones."
 msgstr ""
 
-#: backup.php:496
+#: backup.php:497
 #: page-options.php:48
 msgid "When to back up"
 msgstr "Делать резервные копии"
 
-#: backup.php:496
+#: backup.php:497
 msgid "Selecting a backup frequency other than 'never' will schedule backups to be performed using the WordPress cron. "
 msgstr ""
 
-#: backup.php:496
+#: backup.php:497
 msgid "If you want to do backups using a real cron job, you should leave 'never' selected and use the URI %s to set up the cron job."
 msgstr ""
 
-#: backup.php:500
+#: backup.php:501
 msgid "Advanced settings"
 msgstr "Дополнительные параметры"
 
-#: backup.php:501
-#: backup.php:593
+#: backup.php:502
+#: backup.php:600
 msgid "Backup options"
 msgstr "Параметры резервного копирования"
 
-#: backup.php:502
-#: backup.php:597
+#: backup.php:503
+#: backup.php:604
 msgid "What to back up"
-msgstr "Делать резервные копии"
+msgstr "Что предназначено для резервного копирования"
 
-#: backup.php:502
+#: backup.php:503
 msgid "By default the plugin backs up the content, uploads and plugins folders as well as the database. You can also select to back up the entire WordPress installation directory if you like."
 msgstr ""
 
-#: backup.php:503
+#: backup.php:504
 msgid "On a default WordPress install the uploads and plugins folders are found inside the content folder, but they can be set up to be anywhere. Also the entire content directory can live outside the WordPress root."
-msgstr ""
-
-#: backup.php:504
-#: backup.php:609
-msgid "Exclude list"
-msgstr "Список исключений"
-
-#: backup.php:504
-msgid "This is a comma separated list of files and paths to exclude from backups. Paths can be absolute or relative to the WordPress root directory. Please note that in order to exclude a directory named %1$s that is a subdirectory of the WordPress root directory you would have to input %2$s otherwise all files and directories named %1$s will be excluded."
 msgstr ""
 
 #: backup.php:505
 #: backup.php:616
+msgid "Exclude list"
+msgstr "Список исключений"
+
+#: backup.php:505
+msgid "This is a comma separated list of files and paths to exclude from backups. Paths can be absolute or relative to the WordPress root directory. Please note that in order to exclude a directory named %1$s that is a subdirectory of the WordPress root directory you would have to input %2$s otherwise all files and directories named %1$s will be excluded."
+msgstr ""
+
+#: backup.php:506
+#: backup.php:623
 msgid "Upload options"
 msgstr "Параметры загрузки"
 
-#: backup.php:506
-#: backup.php:620
+#: backup.php:507
+#: backup.php:627
 msgid "Chunk size"
 msgstr "Размер части"
 
-#: backup.php:506
+#: backup.php:507
 msgid "Files are split and uploaded to Google Drive in chunks of this size. Only a size that is a multiple of 0.5 MB (512 KB) is valid. I only recommend setting this to a higher value if you have a fast upload speed but take note that the PHP will use that much more memory."
 msgstr ""
 
-#: backup.php:507
-#: backup.php:624
+#: backup.php:508
+#: backup.php:631
 msgid "Time limit"
 msgstr "Ограничение по времени"
 
-#: backup.php:507
+#: backup.php:508
 msgid "If possible this will be set as the time limit for uploading a file to Google Drive. Just before reaching this limit, the upload stops and an upload resume is scheduled."
-msgstr "Если это возможно, будет установлено ограничение по времени для загрузки файла в Google Диск. Дойдя до этого предела, загрузка останавливается и возобновляется по расписанию."
+msgstr "Если это возможно, будет установлено ограничение по времени для загрузки файла в Диск Google. Дойдя до этого предела, загрузка останавливается и возобновляется по расписанию."
 
-#: backup.php:511
+#: backup.php:512
 msgid "For more information"
 msgstr "Дополнительная информация"
 
-#: backup.php:512
+#: backup.php:513
 msgid "Plugin homepage"
 msgstr "Домашняя страница плагина"
 
-#: backup.php:513
+#: backup.php:514
 msgid "Plugin page on WordPress.org"
 msgstr "Страница плагина на WordPress.org"
 
-#: backup.php:514
+#: backup.php:515
 msgid "If you find this plugin useful and want to support its development please consider %smaking a donation%s."
 msgstr "Если вы находите этот плагин полезным и хотите поддержать его развитие, пожалуйста,  %sсделайте пожертвование%s."
 
-#: backup.php:519
+#: backup.php:520
 msgid "The local path '%s' is not writable. Please change the permissions or choose another directory."
 msgstr "Локальный путь '%s' закрыт для записи. Пожалуйста, измените разрешения или выберите другую папку."
 
-#: backup.php:536
+#: backup.php:537
 msgid "Before backups can be uploaded to Google Drive, you need to authorize the plugin and give it permission to make changes on your behalf."
 msgstr "Перед тем, как резервные копии будут загружены в Диск Google, вы должны авторизовать плагин и дать ему права на внесение изменений от вашего имени."
 
-#: backup.php:538
+#: backup.php:539
 msgid "Client ID"
 msgstr "ID клиента"
 
-#: backup.php:541
+#: backup.php:542
 msgid "Client secret"
 msgstr "Пароль клиента"
 
-#: backup.php:545
+#: backup.php:546
 msgid "Authorize"
 msgstr "Авторизовать"
 
-#: backup.php:549
-msgid "Authorization to use Google Drive has been granted. You can revoke it at any time by clicking the button below."
-msgstr ""
-
 #: backup.php:550
-#, fuzzy
-msgid "Revoke authorization"
-msgstr "Сбой авторизации.\n"
+msgid "Authorization to use Google Drive has been granted. You can revoke it at any time by clicking the button below."
+msgstr "Разрешение на использование Диска Google было предоставлено. Вы можете отменить его в любое время, нажав на кнопку ниже."
 
-#: backup.php:558
+#: backup.php:551
+msgid "Revoke authorization"
+msgstr "Отменить авторизацию"
+
+#: backup.php:559
 msgid "Current date and time:"
 msgstr "Текущие дата и время:"
 
 #. translators: date format, see http:php.net/date
-#: backup.php:560
-#: backup.php:566
-#: backup.php:574
+#: backup.php:561
+#: backup.php:567
+#: backup.php:575
 msgid "M j, Y \\a\\t H:i"
-msgstr "d.m.Y в H:i"
+msgstr "d.m.Y H:i"
 
-#: backup.php:562
+#: backup.php:563
 msgid "Most recent backup:"
-msgstr "Последнее резервное копирование"
+msgstr "Последнее резервное копирование:"
 
-#: backup.php:568
-#: backup.php:576
+#: backup.php:569
+#: backup.php:577
 msgid "never"
 msgstr "никогда"
 
-#: backup.php:570
+#: backup.php:571
 msgid "Next scheduled backup:"
 msgstr "Следующее запланированное резервное копирование:"
 
-#: backup.php:579
-msgid "Google Drive quota:"
-msgstr "Квота Google Диска:"
-
 #: backup.php:580
-#, fuzzy
+msgid "Google Drive quota:"
+msgstr "Квота Диска Google:"
+
+#: backup.php:581
 msgid "%s of %s used"
-msgstr "</b> (используется %1%)"
+msgstr "%s из %s используется"
 
-#: backup.php:583
-msgid "Manual backup URL:"
-msgstr "URL ручного запуска:"
+#: backup.php:590
+msgid "Make backup manual"
+msgstr "Запустить резервное копирование вручную"
 
-#: backup.php:610
-#, fuzzy
+#: backup.php:617
 msgid "Comma separated paths to exclude."
-msgstr "       --exclude-domains=СПИСОК    список запрещённых доменов, разделённых запятыми.\n"
+msgstr "Адреса для исключения разделенные запятыми."
 
-#: backup.php:621
+#: backup.php:628
 msgid "MB"
 msgstr "МБ"
 
-#: backup.php:625
+#: backup.php:632
 msgid "seconds"
 msgstr "сек."
 
-#: backup.php:662
+#: backup.php:669
 msgid "There is no log file to display or the file is empty."
 msgstr "Журнал  пустой."
 
-#: backup.php:674
 #: backup.php:681
+#: backup.php:688
 msgid "You were caught trying to do an illegal operation."
 msgstr ""
 
-#: backup.php:674
 #: backup.php:681
-#, fuzzy
+#: backup.php:688
 msgid "Illegal operation"
-msgstr "Режим работы:\n"
+msgstr "Недопустимая операция"
 
-#: backup.php:691
+#: backup.php:698
 msgid "The chunk size must be a multiple of 0.5 MB."
-msgstr ""
-
-#: backup.php:700
-msgid "The upload time limit must be at least 5 seconds."
-msgstr ""
+msgstr "Размер части должен быть кратен  0.5 МБ."
 
 #: backup.php:707
+msgid "The upload time limit must be at least 5 seconds."
+msgstr "Ограничение по времени не должно быть меньше 5 секунд."
+
+#: backup.php:714
 msgid "The number of local backups to store must be a positive integer."
 msgstr ""
 
-#: backup.php:711
+#: backup.php:718
 msgid "The number of Drive backups to store must be a positive integer."
 msgstr ""
 
-#: backup.php:713
+#: backup.php:720
 msgid "You need to store at least one local or Drive backup."
 msgstr ""
 
-#: backup.php:721
+#: backup.php:728
 msgid "You need to store at least one local backup."
 msgstr ""
 
-#: backup.php:730
+#: backup.php:737
 msgid "Could not create directory %s. You might want to create it manually and set the right permissions. "
 msgstr ""
 
-#: backup.php:732
+#: backup.php:739
 msgid "Could not create log file. Please check permissions."
 msgstr ""
 
-#: backup.php:748
+#: backup.php:755
 msgid "All changes were saved successfully."
 msgstr "Все изменения успешно сохранены."
 
-#: backup.php:1015
+#: backup.php:1022
 msgid "Authorization failed!"
 msgstr "Сбой авторизации!"
 
-#: backup.php:1020
-#, fuzzy
+#: backup.php:1027
 msgid "Authorization was successful."
-msgstr "Проверка камеры прошла успешно."
+msgstr "Авторизация прошла успешно."
 
-#: backup.php:1031
-#, fuzzy
+#: backup.php:1038
 msgid "Could not revoke authorization!"
-msgstr "Не могу зугрузить шрифт \"%s\"."
+msgstr "Не удалось отменить авторизацию!"
 
-#: backup.php:1037
-#, fuzzy
+#: backup.php:1044
 msgid "Authorization has been revoked."
-msgstr "Ключ был отозван"
+msgstr "Авторизация была отменена."
 
-#: backup.php:1043
+#: backup.php:1050
 msgid "You need to specify a 'Client ID' and a 'Client secret' in order to authorize the Backup plugin."
 msgstr "Вы должны определить 'ID клиента' и 'Пароль клиента' перед авторизацией плагина  Backup."
 
