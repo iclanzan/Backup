@@ -8,7 +8,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"PO-Revision-Date: 2012-06-24 23:45+0300\n"
+"PO-Revision-Date: 2012-06-25 01:47+0300\n"
 "Last-Translator: Sergey Yakovlev <sadhooklay@gmail.com>\n"
 "Language-Team: Sergey Yakovlev <sadhooklay@gmail.com>\n"
 "Plural-Forms: nplurals=3; plural=n%100/10==1 ? 2 : n%10==1 ? 0 : (n+9)%10>3 ? 2 : 1;\n"
@@ -31,23 +31,23 @@ msgstr "Ежемесячно"
 
 #: backup.php:258
 msgid "Database"
-msgstr "Базы данных"
+msgstr "База данных"
 
 #: backup.php:259
 msgid "Content"
-msgstr "Содержимого"
+msgstr "Содержимое"
 
 #: backup.php:260
 msgid "Uploads"
-msgstr "Загрузок"
+msgstr "Загрузки"
 
 #: backup.php:261
 msgid "Plugins"
-msgstr "Плагинов"
+msgstr "Плагины"
 
 #: backup.php:262
 msgid "WordPress"
-msgstr "Всего сайта"
+msgstr "Весь сайт"
 
 #: backup.php:309
 msgid "Please enable OpenSSL in PHP. Backup needs it to communicate with Google Drive."
@@ -133,11 +133,11 @@ msgstr "Создание дампа базы данных и добавлени�
 
 #: backup.php:481
 msgid "It can back up locally and on Google Drive."
-msgstr "Может быть запущено для создания резервной копии как локально, так и на Диске Google."
+msgstr "Создание резервной копии как локально, так и на Диске Google."
 
 #: backup.php:482
 msgid "Supports automatic resuming of uploads to Google Drive."
-msgstr "Поддерживается автоматическое возобновление закачек в Диск Google."
+msgstr "Поддержка автоматического возобновления закачек в Диск Google."
 
 #: backup.php:483
 msgid "Rumor has it that support for uploading backups to other popular services is coming."
@@ -145,11 +145,11 @@ msgstr "Ходят слухи, что грядет поддержка загру
 
 #: backup.php:488
 msgid "You can create a %1$sClient ID%2$s in the API Access section of your %3$s if you don't have one. A %1$sClient secret%2$s will also be generated for you as long as you select %4$sWeb Application%5$s as the application type."
-msgstr ""
+msgstr "Вы можете создать %1$sID клиента%2$s в разделе API Access вашей %3$s если у вас его нет. %1$sПароль клиента%2$s будет создан для вас, когда вы выберите тип приложения %4$sWeb Application%5$s."
 
 #: backup.php:489
 msgid "Make sure to add %s as the authorized redirect URI when asked."
-msgstr ""
+msgstr "Убедитесь в том, что вы добавили %s в качестве авторизованного URI перенаправления. "
 
 #: backup.php:493
 msgid "Backup settings"
@@ -162,7 +162,7 @@ msgstr "Локальный путь"
 
 #: backup.php:494
 msgid "This is the path to the local filesystem directory where the plugin will store local backups, logs and other files it creates. The path has to be given absolute or relative to the WordPress root directory. Make sure the path you specify can be created by the plugin, otherwise you have to manually create it and set the right permissions for the plugin to write to it."
-msgstr ""
+msgstr "Это путь к локальному каталогу файловой системы, где плагин будет хранить локальные резервные копии, журналы и другие файлы, которые он создает. Путь должен быть задан абсолютно или относительно к корневому каталогу WordPress. Убедитесь, что вы указываете путь, который может быть создан с помощью плагина, в противном случае вам придется вручную его создать и установить права доступа для плагина для записи в него."
 
 #: backup.php:495
 #: page-options.php:31
@@ -171,7 +171,7 @@ msgstr "ID папки Диска"
 
 #: backup.php:495
 msgid "This is the resource ID of the Google Drive folder where backups will be uploaded. To get a folder's ID navigate to that folder in Google Drive and copy the ID from your browser's address bar. It is the part that comes after %s."
-msgstr ""
+msgstr "Это идентификатор ресурса папки Диска Google, куда будут загружены резервные копии. Для получения идентификатора папки перейдите к этой папке в Диске Google и скопируйте код из адресной строки браузера. Это та часть адресной строки, которая находится после %s."
 
 #: backup.php:496
 #: page-options.php:39
@@ -180,7 +180,7 @@ msgstr "Хранить не более"
 
 #: backup.php:496
 msgid "You can choose to store as many backups as you want both locally and on Google Drive given you have enough free space. Once the maximum number of backups is reached, the oldest backups will get purged when creating new ones."
-msgstr ""
+msgstr "Вы можете выбрать сколько хранить копий, как локально, так и на Диске Google дающим  вам достаточно свободного места. После того, как будет достигнуто максимальное число резервных копий, старые резервные копии будут очищаться при создании новых."
 
 #: backup.php:497
 #: page-options.php:48
@@ -189,11 +189,11 @@ msgstr "Делать резервные копии"
 
 #: backup.php:497
 msgid "Selecting a backup frequency other than 'never' will schedule backups to be performed using the WordPress cron. "
-msgstr ""
+msgstr "Выбор частоты создания резервных копий. В случае выбора 'никогда' резервное копирование не будет запланировано и будет выполняться на основании крона WordPress."
 
 #: backup.php:497
 msgid "If you want to do backups using a real cron job, you should leave 'never' selected and use the URI %s to set up the cron job."
-msgstr ""
+msgstr "Если вы хотите делать резервные копии, используя системный крон, вы должны выбрать 'никогда'  и использовать URI %s для настройки задачи крона."
 
 #: backup.php:501
 msgid "Advanced settings"
@@ -207,11 +207,11 @@ msgstr "Параметры резервного копирования"
 #: backup.php:503
 #: backup.php:604
 msgid "What to back up"
-msgstr "Что предназначено для резервного копирования"
+msgstr "Что хранить в резервной копии"
 
 #: backup.php:503
 msgid "By default the plugin backs up the content, uploads and plugins folders as well as the database. You can also select to back up the entire WordPress installation directory if you like."
-msgstr ""
+msgstr "По умолчанию плагин создает резервные копии содержимого, загрузок, папок плагинов и базы данных. Так же, если хотите, вы можете выбрать для резервного копирования весь каталог с установленным WordPress."
 
 #: backup.php:504
 msgid "On a default WordPress install the uploads and plugins folders are found inside the content folder, but they can be set up to be anywhere. Also the entire content directory can live outside the WordPress root."
@@ -224,7 +224,7 @@ msgstr "Список исключений"
 
 #: backup.php:505
 msgid "This is a comma separated list of files and paths to exclude from backups. Paths can be absolute or relative to the WordPress root directory. Please note that in order to exclude a directory named %1$s that is a subdirectory of the WordPress root directory you would have to input %2$s otherwise all files and directories named %1$s will be excluded."
-msgstr ""
+msgstr "Разделенный запятыми список файлов и путей, для исключения из архива резервной копии. Путь может быть абсолютным или относительным к корневому каталогу WordPress. Пожалуйста, обратите внимание, что для того, чтобы исключить каталог называющийся %1$s и являющийся подкаталогом корневого каталога WordPress, вы должны ввести %2$s в противном случае все файлы и каталоги называющиеся %1$s будут исключены."
 
 #: backup.php:506
 #: backup.php:623
@@ -238,7 +238,7 @@ msgstr "Размер части"
 
 #: backup.php:507
 msgid "Files are split and uploaded to Google Drive in chunks of this size. Only a size that is a multiple of 0.5 MB (512 KB) is valid. I only recommend setting this to a higher value if you have a fast upload speed but take note that the PHP will use that much more memory."
-msgstr ""
+msgstr "На части такого размера файлы разбиваются для загрузки в Диск Google. Размер части должен быть кратен 0.5 МБ (512 КБ). Рекомендуется устанавливать большое значение только если у вас высокая скорость загрузки, но обратите внимание, что PHP будет использовать гораздо больше памяти."
 
 #: backup.php:508
 #: backup.php:631
@@ -315,7 +315,7 @@ msgstr "никогда"
 
 #: backup.php:571
 msgid "Next scheduled backup:"
-msgstr "Следующее запланированное резервное копирование:"
+msgstr "Запланированное резервное копирование:"
 
 #: backup.php:580
 msgid "Google Drive quota:"
@@ -381,11 +381,11 @@ msgstr ""
 
 #: backup.php:737
 msgid "Could not create directory %s. You might want to create it manually and set the right permissions. "
-msgstr ""
+msgstr "Не удалось создать каталог %s. Вы можете создать его вручную и установить права доступа."
 
 #: backup.php:739
 msgid "Could not create log file. Please check permissions."
-msgstr ""
+msgstr "Не удалось создать файл журнала. Пожалуйста, проверьте разрешения."
 
 #: backup.php:755
 msgid "All changes were saved successfully."
@@ -417,7 +417,7 @@ msgstr "По этому адресу хранятся локальные рез�
 
 #: page-options.php:34
 msgid "Backups will be uploaded to this folder. Leave empty to save in root folder."
-msgstr ""
+msgstr "Резервные копии будут загружены в эту папку. Оставьте пустым, для сохранения в корневой папке."
 
 #: page-options.php:41
 msgid "backup(s) locally"
@@ -429,7 +429,7 @@ msgstr "и"
 
 #: page-options.php:43
 msgid "backup(s) on Google Drive"
-msgstr ""
+msgstr "резервная(ых) копия(ии) в Диске Google"
 
 #: page-options.php:51
 msgid "Never"
