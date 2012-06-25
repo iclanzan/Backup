@@ -587,7 +587,7 @@ class Backup {
      * Actions meta box.
      */
     function metabox_action_content( $data ) {
-      echo '<a href="' . home_url('?backup') . '">' . __('Make backup manual', $this->text_domain) . '</a>';
+      echo '<a href="' . home_url('?backup') . '" target="_blank">' . __('Make backup manual', $this->text_domain) . '</a>';
     }
 
     /**
