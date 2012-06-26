@@ -47,7 +47,9 @@ Apart from not being able to purge backups from Google Drive, Backup should work
 == Changelog ==
 
 = 2.1 =
+* Added function __() where it is not 
 * Added Russian localization
+* Added Action Metabox
 
 = 2.0 =
 * Rewrote 95% of the plugin to make it more compatible with older PHP versions, more portable and cleaner. It now uses classes and functions already found in WordPress where possible.
