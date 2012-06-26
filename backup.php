@@ -350,7 +350,7 @@ class Backup {
         if ( ! get_user_meta($this->user_id, "metaboxhidden_".$this->pagehook, true) ) {
           $meta_value = array('metabox-logfile','metabox-action');
             update_user_meta($this->user_id, "metaboxhidden_".$this->pagehook, $meta_value);
-        } 
+        }
 
         // Set the default number of columns.
         if ( ! get_user_meta($this->user_id, "screen_layout_".$this->pagehook, true) ) {
