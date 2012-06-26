@@ -360,7 +360,7 @@ msgid "%s of %s used"
 msgstr ""
 
 #: backup.php:590
-msgid "Make backup manual"
+msgid "Make backup manually"
 msgstr ""
 
 #: backup.php:617
