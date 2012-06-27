@@ -292,6 +292,10 @@ class Backup {
         // Link to the settings page from the plugins pange
         add_filter('plugin_action_links', array(&$this, 'action_links'), 10, 2);
 
+        // Disable unwanted HTTP transports.
+        foreach ( $this->options['disabled_transports'] as $t )
+            add_filter( 'use_' . $t . '_transport', create_function( '', 'return false;' ) );
+
         // Add 'Backup' to the Settings admin menu; save default metabox layout in the database
         add_action('admin_menu', array(&$this, 'backup_menu'));
 
@@ -528,7 +532,7 @@ class Backup {
                          '<p><strong>' . __('Include list', $this->text_domain) . '</strong> - ' . __('This is a comma separated list of paths to include in backups. Paths can be absolute or relative to the WordPress root directory.', $this->text_domain) . '</p>' .
                          '<h3>' . __('Upload options', $this->text_domain) . '</h3>' .
                          '<p><strong>' . __('Chunk size', $this->text_domain) . '</strong> - ' . __('Files are split and uploaded to Google Drive in chunks of this size. Only a size that is a multiple of 0.5 MB (512 KB) is valid. I only recommend setting this to a higher value if you have a fast upload speed but take note that the PHP will use that much more memory.', $this->text_domain) . '</p>' .
-                         '<p><strong>' . __('Time limit', $this->text_domain) . '</strong> - ' . __('If possible this will be set as the time limit for uploading a file to Google Drive. Just before reaching this limit, the upload stops and an upload resume is scheduled.', $this->text_domain) . '</p>'
+                         '<p><strong>' . __('Time limit', $this->text_domain) . '</strong> - ' . __('If possible this will be set as the time limit for uploading a file to Google Drive. Just before reaching this limit, the upload stops and an upload resume is scheduled.', $this->text_domain) . '</p>' .
                          '<h3>' . __('HTTP options', $this->text_domain) . '</h3>' .
                          '<p><strong>' . __('Request timeout', $this->text_domain) . '</strong> - ' . __('Set this to the number of seconds the HTTP transport should wait for a response before timing out.', $this->text_domain) . '</p>' .
                          '<p><strong>' . __('SSL verification', $this->text_domain) . '</strong> - ' . __('Although not recommended, this option allows you to disable the host\'s SSL certificate verification.', $this->text_domain) . '</p>'
