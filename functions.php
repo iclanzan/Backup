@@ -141,16 +141,17 @@ function _zip_create_ziparchive( $sources, $destination, $exclude = array() ) {
         return new WP_Error( 'ziparchive', $res );
 
     foreach ( $sources as $source )
-        if ( @is_dir($source) ) {
-            $files = directory_list($source, true, $exclude);
-            foreach ( $files as $file )
-                if ( @is_dir($file) )
-                    $zip->addEmptyDir(str_replace(parent_dir($source) . '/', '', $file . '/'));
-                elseif ( @is_file($file) )
-                    $zip->addFile($file, str_replace(parent_dir($source) . '/', '', $file));
-        }
-        elseif ( @is_file($source) )
-            $zip->addFile($source, basename($source)); 
+        if ( @is_readable($source) )
+            if ( @is_dir($source) ) {
+                $files = directory_list($source, true, $exclude);
+                foreach ( $files as $file )
+                    if ( @is_dir($file) && @is_readable($file) )
+                        $zip->addEmptyDir(str_replace(parent_dir($source) . '/', '', $file . '/'));
+                    elseif ( @is_file($file) && @is_readable($file) )
+                        $zip->addFile($file, str_replace(parent_dir($source) . '/', '', $file));
+            }
+            elseif ( @is_file($source) )
+                $zip->addFile($source, basename($source));
 
     $zip_result = $zip->close();
 
@@ -175,17 +176,18 @@ function _zip_create_pclzip( $sources, $destination, $exclude = array() ) {
     require_once(ABSPATH . 'wp-admin/includes/class-pclzip.php');
     $zip = new PclZip($destination);
     foreach ( $sources as $source )
-        if ( @is_dir($source) ) {
-            $files = directory_list($source, true, $exclude);
-            $res = $zip->add($files, PCLZIP_OPT_REMOVE_PATH, parent_dir($source));
-            if ( 0 == $res )
-                return new WP_Error('pclzip', $zip->errorInfo(true));
-        }
-        elseif ( @is_file($source) ) {
-            $res = $zip->add($source, parent_dir($source));
-            if ( 0 == $res )
-                return new WP_Error('pclzip', $zip->errorInfo(true));
-        }
+        if ( @is_readable($source) )
+            if ( @is_dir($source) ) {
+                $files = directory_list($source, true, $exclude);
+                $res = $zip->add($files, PCLZIP_OPT_REMOVE_PATH, parent_dir($source));
+                if ( 0 == $res )
+                    return new WP_Error('pclzip', $zip->errorInfo(true));
+            }
+            elseif ( @is_file($source) ) {
+                $res = $zip->add($source, PCLZIP_OPT_REMOVE_PATH, parent_dir($source));
+                if ( 0 == $res )
+                    return new WP_Error('pclzip', $zip->errorInfo(true));
+            }
     return true;      
 }
 endif;

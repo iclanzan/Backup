@@ -60,9 +60,19 @@ class GDocs {
 
 	/**
 	 * Stores feeds to avoid requesting them again for successive use.
+	 * 
 	 * @var array
+	 * @access private
 	 */
 	private $cache = array();
+
+	/**
+	 * Stores the handle of the file open for uploading.
+	 * 
+	 * @var resource
+	 * @access private
+	 */
+	private $file_handle;
 
 	/**
 	 * Files are uploadded in chunks of this size in bytes .
@@ -104,6 +114,13 @@ class GDocs {
 	private $max_resume_attempts;
 
 	/**
+	 * This is true if a failed upload is resumable.
+	 * 
+	 * @var boolean
+	 */
+	private $resumable;
+
+	/**
 	 * Stores the number of seconds the upload process is allowed to run
 	 * 
 	 * @var integer
@@ -131,6 +148,7 @@ class GDocs {
 		$this->chunk_size = 524288; // 512 KiB
 		$this->time_limit = 120; // 2 minutes
 		$this->max_resume_attempts = 5;
+		$this->resumable = false;
 		$this->resume_list = get_option( 'gdocs_resume' );
 		$this->timer = array(
 			'start' => 0,
@@ -338,8 +356,8 @@ class GDocs {
 	 */
 	public function upload_file( $file, $title, $parent = '', $type = '' ) {
 
-		if ( ! @is_file($file) )
-			return new WP_Error('not_file', "The path '" . $file . "' does not point to a file.");
+		if ( ! @is_readable($file) )
+			return new WP_Error('not_file', "The path '" . $file . "' does not point to a readable file.");
 
 		// If a mime type wasn't passed try to guess it from the extension based on the WordPress allowed mime types
 		if ( empty( $type ) ) {
@@ -382,11 +400,15 @@ class GDocs {
         );
         update_option('gdocs_resume', $this->resume_list);
 
-        // Start timer
+        // Start timer.
 		$this->timer['start'] = microtime( true );
 
-		// Set time limit
+		// Set time limit.
 		set_time_limit($this->time_limit);
+
+		// Open file for reading.
+		if ( !$this->file_handle = fopen( $file, "rb" ) )
+			return new WP_Error( 'open_error', "Could not open file '" . $file . "' for reading." );
 
         return $this->upload_chunks( $file, 0 );          
 	}
@@ -399,13 +421,13 @@ class GDocs {
 	 * @return mixed   Returns Google Docs resource ID on success, an instance of WP_Error on failure.
 	 */
 	public function resume_upload() {
-		$id = $this->get_resume_item_id(); error_log($id."\n".var_export($this->resume_list,true));
+		$id = $this->get_resume_item_id();
 		if( !$id )
 			return new WP_Error("no_items", "There are no uploads that need to be resumed.");
-		if ( ! @is_file($this->resume_list[$id]['path']) ) {
+		if ( ! @is_readable($this->resume_list[$id]['path']) ) {
 			unset($this->resume_list[$id]);
 			update_option('gdocs_resume', $this->resume_list);
-			return new WP_Error('not_file', "The path '" . $this->resume_list[$id]['path'] . "' does not point to a file. Upload has been canceled.");
+			return new WP_Error('not_file', "The path '" . $this->resume_list[$id]['path'] . "' does not point to a readable file. Upload has been canceled.");
 		}
 
 		// Mark resumable item as being in use to prevent concurrent GDocs instances from using it. 
@@ -415,10 +437,14 @@ class GDocs {
 
 		$headers = array( 'Content-Range' => 'bytes */' . $this->resume_list[$id]['size'] );
 		$result = $this->request( $this->resume_list[$id]['location'], 'PUT', $headers );
-		if( is_wp_error( $result ) )
+		if( is_wp_error( $result ) ) {
+			$this->resumable = true;
 			return $result;
-		if ( $result['response']['code'] != '308' )
+		}
+		if ( $result['response']['code'] != '308' ) {
+			$this->resumable = true;	
 			return new WP_Error('bad_response', "Received response code '" . $result['response']['code'] . " " . $result['response']['message'] . "' while trying to resume the upload of file '" . $this->resume_list[$id]['title'] . "'.");
+		}
 		if( isset( $result['headers']['location'] ) )
 			$this->resume_list[$id]['location'] = $result['headers']['location'];
 		$pointer = intval(substr( $result['headers']['range'], strpos( $result['headers']['range'], '-' ) + 1 )) + 1;
@@ -428,6 +454,10 @@ class GDocs {
 
 		// Set time limit
 		set_time_limit($this->time_limit);
+
+		// Open file for reading.
+		if ( !$this->file_handle = fopen( $this->resume_list[$id]['path'], "rb" ) )
+			return new WP_Error( 'open_error', "Could not open file '" . $this->resume_list[$id]['path'] . "' for reading." );
 
 		return $this->upload_chunks($id, $pointer);
 	}
@@ -458,7 +488,9 @@ class GDocs {
 	 * @return mixed  Returns an array with information about the item to be resumed or FALSE if there is no resumable item.
 	 */
 	public function get_resume_item() {
-		return $this->resume_list[$this->get_resume_item_id()];
+		if ( $id = $this->get_resume_item_id() )
+			return $this->resume_list[$id];
+		return false;
 	}
 
 	/**
@@ -471,7 +503,8 @@ class GDocs {
 	 */
 	private function upload_chunks( $id, $pointer ) {
 		$cycle_start = microtime(true);
-		$chunk = @file_get_contents( $this->resume_list[$id]['path'], false, NULL, $pointer, $this->chunk_size );
+		fseek( $this->file_handle, $pointer );
+		$chunk = @fread( $this->file_handle, $this->chunk_size );
         if ( $chunk === false )
         	return new WP_Error( 'read_error', "Failed to read from file '" . $this->resume_list[$id]['path'] . "'." );
 
@@ -496,7 +529,8 @@ class GDocs {
         	if ( $this->approaching_timeout() ) {
         		$this->resume_list[$id]['used'] = false;
         		update_option('gdocs_resume', $this->resume_list);
-        		return new WP_Error('resumable', "The upload process timed out but can be resumed.");
+        		$this->resumable = true;
+        		return new WP_Error('timeout', "The upload process timed out but can be resumed.");
         	}	
         	else {
         		unset($chunk); // We need to unset this otherwise it will be kept in memory until the upload finishes.
@@ -504,6 +538,7 @@ class GDocs {
         	}	
         }
         if ( $result['response']['code'] == '201' ) {
+        	fclose( $this->file_handle );
         	$feed = @simplexml_load_string( $result['body'] );
 			if ( $feed === false )
 				return new WP_Error( 'invalid_data', "Could not create SimpleXMLElement from '" . $result['body'] . "'." );
@@ -520,24 +555,49 @@ class GDocs {
         }
 
         // If we got to this point it means the upload wasn't successful.
+        fclose( $this->file_handle );
 
         // Give up if we tried to resume too many times
         if ( $this->resume_list[$id]['attempt'] >= 5 ) {
         	$temp = $this->resume_list[$id];
         	unset( $this->resume_list[$id] );
 			update_option( 'gdocs_resume', $this->resume_list );
-			return new WP_Error( 'fail', "The upload of file '" . $temp['path'] . "' failed after trying " . $temp['attempt'] . " times." );
+			return new WP_Error( 'permanent_fail', "The upload of file '" . $temp['path'] . "' failed after trying " . $temp['attempt'] . " times." );
 		}
 
 		// Mark resumable upload as not being used
 		$this->resume_list[$id]['used'] = false;
 		update_option( 'gdocs_resume', $this->resume_list );
-	    return new WP_Error( 'resumable', "Received response code '" . $result['response']['code'] . " " . $result['response']['message'] . "' while trying to upload a chunk of file '" . $this->resume_list[$id]['title'] . "'. The upload might be resumable." );
+		$this->resumable = true;
+	    return new WP_Error( 'bad_response', "Received response code '" . $result['response']['code'] . " " . $result['response']['message'] . "' while trying to upload a chunk of file '" . $this->resume_list[$id]['title'] . "'. The upload might be resumable." );
+	}
+
+	/**
+	 * Get the upload speed recorded on the last upload performed.
+	 *
+	 * @access public
+	 * @return mixed  Returns the upload speed in bytes/second or FALSE.
+	 */
+	public function get_upload_speed() {
+		if ( isset( $this->timer['cycle'] ) )
+			return $this->chunk_size / $this->timer['cycle'];
+		return false;
+	}
+
+	/**
+	 * Find out if a failed upload is resumable.
+	 *
+	 * @access public
+	 * @return boolean Returns TRUE if a failed upload is resumable, FALSE otherwise.
+	 */
+	public function is_resumable() {
+		return $this->resumable;
 	}
 
 	/**
 	 * Checks if the script is nearing max execution time.
 	 * 
+	 * @access private
 	 * @return boolean Returns TRUE if nearing max execution time, FALSE otherwise.
 	 */
 	private function approaching_timeout() {
@@ -547,11 +607,14 @@ class GDocs {
 	}
 
 	/**
-	 * Returns the time taken for an upload to complete
-	 * 
-	 * @return float The number of seconds accurate to the microsecond it took for the upload to complete
+	 * Returns the time taken for an upload to complete.
+	 *
+	 * @access public
+	 * @return mixed  Returns a float number of seconds if an upload has been completed, FALSE otherwise.
 	 */
 	public function time_taken() {
-		return $this->timer['delta'];
+		if ( isset( $this->timer['delta'] ) )
+			return $this->timer['delta'];
+		return false;
 	}
 }

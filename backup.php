@@ -792,8 +792,9 @@ class Backup {
      */
     public function do_backup() {
         // Check if the backup folder is writable
-        if ( !( is_dir($this->local_folder) && @is_writable($this->local_folder) ) ) {
+        if ( !( @is_writable($this->local_folder) ) ) {
             $this->log('ERROR', "The directory '" . $this->local_folder . "' does not exist or it is not writable.");
+            exit;
         }
 
         // Measure the time this function takes to complete.
@@ -808,7 +809,7 @@ class Backup {
         
         // Create database dump sql file.
         if ( in_array('database', $this->options['source_list']) ) {
-            $this->log('NOTICE', 'Attempting to dump database to ' . $this->dump_file);
+            $this->log('NOTICE', "Attempting to dump database to '" . $this->dump_file . "'.");
             $dump_time = db_dump($this->dump_file);
 
             if ( is_wp_error($dump_time) ) {
@@ -831,11 +832,12 @@ class Backup {
         $count = count($sources);
         for ( $i = 0; $i < $count; $i++ )
             for ( $j = 0; $j < $count; $j++ )
-                if ( $j != $i && isset($sources[$i]) && isset($sources[$j]) && is_subdir($sources[$j], $sources[$i]) ) 
+                if ( $j != $i && isset($sources[$i]) && isset($sources[$j]) && 
+                    is_subdir($sources[$j], $sources[$i]) && $this->sources['database']['path'] != $sources[$j] )
                     unset($sources[$j]);
 
         // Create archive from all enabled sources.
-        $this->log('NOTICE', 'Attempting to create archive ' . $file_path);
+        $this->log('NOTICE', "Attempting to create archive '" . $file_path . "'.");
         $zip_time = zip($sources, $file_path, $exclude);
 
         if ( is_wp_error($zip_time) ) {
@@ -843,7 +845,7 @@ class Backup {
             exit;
         }
 
-        $this->log('NOTICE', 'Archive created successfully in ' . round($zip_time, 2) . ' seconds. Archive file size is ' . size_format( filesize( $file_path ) ) ) . '.';
+        $this->log('NOTICE', 'Archive created successfully in ' . round($zip_time, 2) . ' seconds. Archive file size is ' . size_format( filesize( $file_path ) ) . '.');
         delete_path($this->dump_file);
 
         if ( $this->options['drive_number'] > 0 && $this->goauth->is_authorized() ) {
@@ -859,16 +861,20 @@ class Backup {
                 $this->gdocs->set_option('chunk_size', $this->options['chunk_size']);
                 $this->gdocs->set_option('time_limit', $this->options['time_limit']);
 
-                $this->log('NOTICE', 'Attempting to upload archive to Google Drive');
+                $this->log('NOTICE', 'Attempting to upload archive to Google Drive.');
                 $id = $this->gdocs->upload_file($file_path, $file_name, $this->options['drive_folder']);
                 if ( is_wp_error($id) ) {
-                    $this->log_wp_error($id);
-                    $err = $id->get_error_message('resumable');
-                    if ( ! empty($err) ) // If we are here it means we have a chance at resuming the download so schedule resume.
+                    if ( $this->gdocs->is_resumable() ) { // If we are here it means we have a chance at resuming the download so schedule resume.
+                        $this->log("WARNING", $id->get_error_message() . ' The upload speed was around ' . size_format( $this->gdocs->get_upload_speed() ) . '/s.');
                         wp_schedule_single_event($this->time, 'backup_resume');
+                    }
+                    else {
+                        $this->log_wp_error($id);
+                        delete_path( $file_path );
+                    }
                 }
                 else {
-                    $this->log('NOTICE', 'Archive ' . $file_name . ' uploaded to Google Drive in ' . round($this->gdocs->time_taken(), 2) . ' seconds');
+                    $this->log('NOTICE', 'Archive ' . $file_name . ' uploaded to Google Drive in ' . round($this->gdocs->time_taken(), 2) . ' seconds at an upload speed of ' . size_format( $this->gdocs->get_upload_speed() ) . '/s.');
                     $this->options['local_files'][] = $file_path;
                     $this->options['drive_files'][] = $id;
                     $this->options['last_backup'] = $this->time;
@@ -900,39 +906,49 @@ class Backup {
      * Resumes an interrupted backup upload.
      */
     public function backup_resume() {
-        // Check if the backup folder is writable.
-        if ( !( is_dir($this->local_folder) && @is_writable($this->local_folder) ) ) {
-            $this->log('ERROR', "The directory '" . $this->local_folder . "' does not exist or it is not writable.");
-        }
         $access_token = $this->goauth->get_access_token();
-        if ( is_wp_error($access_token) )
+        if ( is_wp_error($access_token) ) {
             $this->log_wp_error($access_token);
-        else {
-            // We need an instance of GDocs here to talk to the Google Documents List API.
-            if ( ! is_gdocs($this->gdocs) )
-                $this->gdocs = new GDocs($access_token);
-            $file = $this->gdocs->get_resume_item();
-            if ( $file )
-                $this->log('NOTICE', 'Resuming upload of ' . $file['title'] . '.');
-            $id   = $this->gdocs->resume_upload();
-            if ( is_wp_error($id) ) {
-                $this->log_wp_error($id);
-                $err = $id->get_error_message('resumable');
-                if ( ! empty($err) )
-                    wp_schedule_single_event($this->time, 'backup_resume');
+            exit;
+        }
+
+        // We need an instance of GDocs here to talk to the Google Documents List API.
+        if ( ! is_gdocs($this->gdocs) )
+            $this->gdocs = new GDocs($access_token);
+        
+        $file = $this->gdocs->get_resume_item();
+        if ( !$file ) {
+            $this->log("WARNING", "There is no upload to resume.");
+            exit;
+        }
+
+        $this->gdocs->set_option('chunk_size', $this->options['chunk_size']);
+        $this->gdocs->set_option('time_limit', $this->options['time_limit']);
+
+        $this->log('NOTICE', "Resuming upload of '" . $file['title'] . "'.");
+        $id   = $this->gdocs->resume_upload();
+        if ( is_wp_error($id) ) {
+            if ( $this->gdocs->is_resumable() ) {
+                $this->log("WARNING", $id->get_error_message() . ' The upload speed was around ' . size_format( $this->gdocs->get_upload_speed() ) . '/s.');
+                wp_schedule_single_event($this->time, 'backup_resume');
             }
             else {
-                $this->log('NOTICE', 'The archive was uploaded successfully.');
-                $this->options['drive_files'][] = $id;
-                $this->options['last_backup'] = substr($file['title'], 0, strpos($file['title'], '.')); // take the time from the title
-                // Update quotas if uploading to Google Drive was successful.
-                $this->update_quota();
-                $this->purge_drive_files();
-                delete_path($file['path']);
-                // Updating options in the database.
-                update_option('backup_options', $this->options);
-            } 
-        }    
+                $this->log_wp_error($id);
+                delete_path( $file['path'] );
+            }
+        }
+        else {
+            $this->log('NOTICE', 'The archive was uploaded successfully. The upload speed was around ' . size_format( $this->gdocs->get_upload_speed() ) . '/s.');
+            $this->options['local_files'][] = $file['path'];
+            $this->options['drive_files'][] = $id;
+            $this->options['last_backup'] = substr($file['title'], 0, strpos($file['title'], '.')); // take the time from the title
+            // Update quotas if uploading to Google Drive was successful.
+            $this->update_quota();
+            $this->purge_local_files();
+            $this->purge_drive_files();
+            // Updating options in the database.
+            update_option('backup_options', $this->options);
+        }
     }
 
     /**
@@ -945,7 +961,7 @@ class Backup {
                 if ( is_wp_error($result) )
                     $this->log_wp_error($result);
                 else
-                    $this->log('NOTICE', 'Deleted Google Drive file ' . $r);
+                    $this->log('NOTICE', "Deleted Google Drive file '" . $r . "'.");
             }
         return new WP_Error('missing_gdocs', "An instance of GDocs is needed to delete Google Drive resources.");   
     }
@@ -956,9 +972,9 @@ class Backup {
     private function purge_local_files() {
         while ( count($this->options['local_files']) > $this->options['local_number'] )
             if ( delete_path($f = array_shift($this->options['local_files'])) )
-                $this->log('NOTICE', 'Purged backup file ' . $f);
+                $this->log('NOTICE', "Purged backup file '" . $f . "'.");
             else    
-                $this->log('WARNING', 'Could not delete file ' . $f);
+                $this->log('WARNING', "Could not delete file '" . $f . "'.");
     }
 
     /**

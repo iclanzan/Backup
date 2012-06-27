@@ -12,7 +12,7 @@ Make backups of your Wordpress site to Google Drive.
 
 == Description ==
 
-Version 2.1 is out and it's full of improvements and new features!
+Version 2.0 is out and it's full of improvements and new features!
 
 If you use this plugin and find it useful please consider [donating](http://hel.io/donate/ "Make a donation for your favorite WordPress plugin."). I have invested (and continue to do so) a lot of time and effort into making this a useful and polished product even though at the moment I have no source of income. Even a small contribution helps a lot.
 
@@ -48,6 +48,14 @@ Apart from not being able to purge backups from Google Drive, Backup should work
 
 = 2.1 =
 * Added Russian localization
+
+= 2.0.1 =
+* Fixed database dump not getting added to the backup archive in some circumstances.
+* Fixed not setting the time limit and chunk size when resuming uploads.
+* Fixed local backups not being deleted after a failed upload.
+* Fixed some bugs in the GDocs class and optimized chunk reading.
+* Now logging upload speeds.
+* Other minor bug fixes.
 
 = 2.0 =
 * Rewrote 95% of the plugin to make it more compatible with older PHP versions, more portable and cleaner. It now uses classes and functions already found in WordPress where possible.
