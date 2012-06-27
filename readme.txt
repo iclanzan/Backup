@@ -18,7 +18,7 @@ If you use this plugin and find it useful please consider [donating](http://hel.
 
 Backup is a plugin that provides backup capabilities for Wordpress. Backups are `zip` archives created locally and uploaded to a folder of your choosing on Google Drive.
 
-You are in total control of what files and directories get backed up. 
+You are in total control of what files and directories get backed up.
 
 == Installation ==
 
@@ -47,6 +47,10 @@ Apart from not being able to purge backups from Google Drive, Backup should work
 == Changelog ==
 
 = 2.1 =
+* Added field to specify what paths to include in the backup.
+* Added option to change the request timeout value.
+* Added option to disable specific HTTP transports.
+* Added option to disable SSL verification against a certificate.
 * Added Russian localization
 
 = 2.0.1 =

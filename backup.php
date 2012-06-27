@@ -46,7 +46,7 @@ require_once('functions.php');
  *
  * Implements backup functionality in WordPress. Currenly supports
  * backing up on the local filesystem and on Google Drive.
- * 
+ *
  * @uses WP_Error for storing error messages.
  * @uses GOAuth   for Google OAuth2 authorization.
  * @uses GData    to upload backups to Google Drive (Docs).
@@ -55,7 +55,7 @@ class Backup {
 
     /**
      * Stores the plugin base filesystem directory
-     * 
+     *
      * @var string
      * @access private
      */
@@ -63,7 +63,7 @@ class Backup {
 
     /**
      * Stores the unique text domain used for I18n
-     * 
+     *
      * @var string
      * @access private
      */
@@ -71,9 +71,9 @@ class Backup {
 
     /**
      * Stores plugin options.
-     * 
+     *
      * Options are automatically updated in the database when the destructor is called.
-     * 
+     *
      * @var array
      * @access private
      */
@@ -81,7 +81,7 @@ class Backup {
 
     /**
      * Stores custom schedule intervals to use with WP_Cron.
-     * 
+     *
      * @var array
      * @access private
      */
@@ -89,7 +89,7 @@ class Backup {
 
     /**
      * Stores the redirect URI needed by GOAuth.
-     * 
+     *
      * @var string
      * @access private
      */
@@ -97,7 +97,7 @@ class Backup {
 
     /**
      * Stores an instance of GDocs.
-     * 
+     *
      * @var GDocs
      * @access private
      */
@@ -105,7 +105,7 @@ class Backup {
 
     /**
      * Stores an instance of GOAuth.
-     * 
+     *
      * @var GOAuth
      * @access private
      */
@@ -113,7 +113,7 @@ class Backup {
 
     /**
      * Stores messages that need to be displayed on the option page.
-     * 
+     *
      * @var array
      * @access private
      */
@@ -121,7 +121,7 @@ class Backup {
 
     /**
      * Stores the absolute path to the directory this plugin will use to store files.
-     * 
+     *
      * @var string
      * @access private
      */
@@ -129,7 +129,7 @@ class Backup {
 
     /**
      * Stores the absolute path and file name where database dumps are saved.
-     * 
+     *
      * @var string
      * @access private
      */
@@ -137,7 +137,7 @@ class Backup {
 
     /**
      * Stores the absolute path to the log file.
-     * 
+     *
      * @var string
      * @access private
      */
@@ -145,7 +145,7 @@ class Backup {
 
     /**
      * Stores the log file basename
-     * 
+     *
      * @var string
      * @access private
      */
@@ -153,7 +153,7 @@ class Backup {
 
     /**
      * Stores a list of paths to directories and files that are available for backup.
-     * 
+     *
      * @var array
      * @access private
      */
@@ -161,7 +161,7 @@ class Backup {
 
     /**
      * Stores paths that are to be excluded when backing up.
-     * 
+     *
      * @var array
      * @access private
      */
@@ -169,7 +169,7 @@ class Backup {
 
     /**
      * Stores a list of URIs representing the scope required by GOAuth.
-     * 
+     *
      * @var array
      * @access private
      */
@@ -177,7 +177,7 @@ class Backup {
 
     /**
      * Stores the timestamp at the time of the execution.
-     * 
+     *
      * @var integer
      * @access private
      */
@@ -185,7 +185,7 @@ class Backup {
 
     /**
      * Stores the identifier of the plugin options page.
-     * 
+     *
      * @var string
      * @access private
      */
@@ -193,11 +193,19 @@ class Backup {
 
     /**
      * Stores the ID of the current user
-     * 
+     *
      * @var integer
      * @access private
      */
     private $user_id;
+
+    /**
+     * Stores the list of HTTP transports supported by WordPress
+     *
+     * @var array
+     * @access private
+     */
+    private $http_transports;
 
     function __construct() {
         $this->time = current_time('timestamp');
@@ -208,17 +216,19 @@ class Backup {
         // Enable internationalization
         load_plugin_textdomain($this->text_domain, false, $this->plugin_dir . '/languages' );
 
-        $this->goauth_scope = array(
+        $this->scope = array(
             'https://www.googleapis.com/auth/drive.file',
             'https://docs.google.com/feeds/',
             'https://docs.googleusercontent.com/',
             'https://spreadsheets.google.com/feeds/'
         );
 
+        $this->http_transports = array( 'curl', 'streams', 'fsockopen' );
+
         $this->schedules = array(
             'weekly' => array(
                 'interval' => 604800,
-                'display' => __('Weekly', $this->text_domain) 
+                'display' => __('Weekly', $this->text_domain)
             ),
             'monthly' => array(
                 'interval' => 2592000,
@@ -230,23 +240,27 @@ class Backup {
         // Get options if they exist, else set default
         if ( ! $this->options = get_option('backup_options') ) {
             $this->options = array(
-                'refresh_token'    => '',
-                'local_folder'     => relative_path(ABSPATH, $this->local_folder),
-                'drive_folder'     => '',
-                'backup_frequency' => 'never',
-                'source_list'      => array( 'database', 'content', 'uploads', 'plugins' ),
-                'exclude_list'     => array( '.svn', '.git', '.DS_Store' ),
-                'client_id'        => '',
-                'client_secret'    => '',
-                'last_backup'      => '',
-                'local_number'     => 10,
-                'drive_number'     => 10,
-                'local_files'      => array(),
-                'drive_files'      => array(),
-                'quota_total'      => '',
-                'quota_used'       => '',
-                'chunk_size'       => 0.5, // MiB
-                'time_limit'       => 120 // seconds
+                'refresh_token'       => '',
+                'local_folder'        => relative_path(ABSPATH, $this->local_folder),
+                'drive_folder'        => '',
+                'backup_frequency'    => 'never',
+                'source_list'         => array( 'database', 'content', 'uploads', 'plugins' ),
+                'exclude_list'        => array( '.svn', '.git', '.DS_Store' ),
+                'include_list'        => array(),
+                'client_id'           => '',
+                'client_secret'       => '',
+                'last_backup'         => '',
+                'local_number'        => 10,
+                'drive_number'        => 10,
+                'local_files'         => array(),
+                'drive_files'         => array(),
+                'quota_total'         => '',
+                'quota_used'          => '',
+                'chunk_size'          => 0.5, // MiB
+                'time_limit'          => 120, // seconds
+                'request_timeout'     => 5, // seconds
+                'disabled_transports' => array(),
+                'ssl_verify'          => true
             );
         }
 
@@ -302,7 +316,8 @@ class Backup {
      * This is run when you activate the plugin, checking for compatibility, adding the default options to the database.
      *
      * @global string $wp_version Used to check against the required WordPress version.
-     */ 
+     */
+
     public function activate() {
         global $wp_version;
         // Check for compatibility
@@ -329,12 +344,12 @@ class Backup {
             return;
         }
 
-        // Add the default options to the database, without letting WP autoload them 
+        // Add the default options to the database, without letting WP autoload them
         add_option('backup_options', $this->options, '', 'no');
 
         // We call this here just to get the page hook
         $this->pagehook = add_options_page(__('Backup Settings', $this->text_domain), __('Backup', $this->text_domain), 'manage_options', 'backup', array(&$this, 'options_page'));
-        
+
         if ( ! $this->user_id )
             $this->user_id = get_current_user_id();
 
@@ -384,7 +399,7 @@ class Backup {
         // Revoke Google OAuth2 authorization.
         if ( $this->goauth->is_authorized() )
             $this->goauth->revoke_refresh_token($this->options['refresh_token']);
-        
+
         // Unschedule events.
         if ( wp_next_scheduled('backup_schedule') ) {
             wp_clear_scheduled_hook('backup_schedule');
@@ -408,7 +423,7 @@ class Backup {
 
     /**
      * Filter - Add custom schedule intervals.
-     * 
+     *
      * @param  array $schedules The array of defined intervals.
      * @return array            Returns the array of defined intervals after adding the custom ones.
      */
@@ -418,7 +433,7 @@ class Backup {
 
     /**
      * Filter - Adds a 'Settings' action link on the plugins page.
-     * 
+     *
      * @param  array  $links The list of links.
      * @param  string $file  The plugin file to check.
      * @return array         Returns the list of links with the custom link added.
@@ -436,7 +451,7 @@ class Backup {
 
     /**
      * This tells WordPress we support 2 columns on the options page.
-     * 
+     *
      * @param  array  $columns The array of columns.
      * @param  string $screen  The ID of the current screen.
      * @return array           Returns the array of columns.
@@ -510,9 +525,14 @@ class Backup {
                          '<p><strong>' . __('What to back up', $this->text_domain) . '</strong> - ' . __('By default the plugin backs up the content, uploads and plugins folders as well as the database. You can also select to back up the entire WordPress installation directory if you like.', $this->text_domain) . '</p>' .
                          '<p>' . __('On a default WordPress install the uploads and plugins folders are found inside the content folder, but they can be set up to be anywhere. Also the entire content directory can live outside the WordPress root.', $this->text_domain) . '</p>' .
                          '<p><strong>' . __('Exclude list', $this->text_domain) . '</strong> - ' . sprintf(__('This is a comma separated list of files and paths to exclude from backups. Paths can be absolute or relative to the WordPress root directory. Please note that in order to exclude a directory named %1$s that is a subdirectory of the WordPress root directory you would have to input %2$s otherwise all files and directories named %1$s will be excluded.', $this->text_domain), '<kbd>example</kbd>', '<kbd>./example</kbd>') . '</p>' .
+                         '<p><strong>' . __('Include list', $this->text_domain) . '</strong> - ' . __('This is a comma separated list of paths to include in backups. Paths can be absolute or relative to the WordPress root directory.', $this->text_domain) . '</p>' .
                          '<h3>' . __('Upload options', $this->text_domain) . '</h3>' .
                          '<p><strong>' . __('Chunk size', $this->text_domain) . '</strong> - ' . __('Files are split and uploaded to Google Drive in chunks of this size. Only a size that is a multiple of 0.5 MB (512 KB) is valid. I only recommend setting this to a higher value if you have a fast upload speed but take note that the PHP will use that much more memory.', $this->text_domain) . '</p>' .
                          '<p><strong>' . __('Time limit', $this->text_domain) . '</strong> - ' . __('If possible this will be set as the time limit for uploading a file to Google Drive. Just before reaching this limit, the upload stops and an upload resume is scheduled.', $this->text_domain) . '</p>'
+                         '<h3>' . __('HTTP options', $this->text_domain) . '</h3>' .
+                         '<p><strong>' . __('Request timeout', $this->text_domain) . '</strong> - ' . __('Set this to the number of seconds the HTTP transport should wait for a response before timing out.', $this->text_domain) . '</p>' .
+                         '<p><strong>' . __('SSL verification', $this->text_domain) . '</strong> - ' . __('Although not recommended, this option allows you to disable the host\'s SSL certificate verification.', $this->text_domain) . '</p>'
+                         '<p><strong>' . __('Disabled transports', $this->text_domain) . '</strong> - ' . __('If having trouble with HTTP requests, disabling one or more of the transports might help. At least one transport must remain enabled.', $this->text_domain) . '</p>'
         ) );
 
         $screen->set_help_sidebar(
@@ -542,7 +562,7 @@ class Backup {
         if ( !$this->goauth->is_authorized() ) { ?>
         <form action="<?php echo $this->redirect_uri; ?>" method="post">
             <p><?php _e('Before backups can be uploaded to Google Drive, you need to authorize the plugin and give it permission to make changes on your behalf.', $this->text_domain); ?></p>
-            <p>            
+            <p>
                 <label for="client_id"><?php _e('Client ID', $this->text_domain); ?></label>
                 <input id="client_id" name="client_id" type='text' style="width: 99%" value='<?php echo esc_html($this->options['client_id']); ?>' />
             </p>
@@ -569,15 +589,15 @@ class Backup {
         '</strong></div>' .
         '<div class="misc-pub-section">' . __('Most recent backup:', $this->text_domain) . '<br/><strong>';
             if ( $this->options['last_backup'] )
-                echo 
+                echo
                     /* translators: date format, see http://php.net/date */
                     date(__("M j, Y \a\\t H:i", $this->text_domain), $this->options['last_backup']);
             else
-                _e('never', $this->text_domain);  
+                _e('never', $this->text_domain);
         echo '</strong></div>' .
         '<div class="misc-pub-section">' . __('Next scheduled backup:', $this->text_domain) . '<br/><strong>';
             if ( $next = wp_next_scheduled('backup_schedule'))
-                echo 
+                echo
                     /* translators: date format, see http://php.net/date */
                     date(__("M j, Y \a\\t H:i", $this->text_domain), $next);
             else
@@ -607,7 +627,7 @@ class Backup {
                                     '<div class="feature-filter">' .
                                         '<ol class="feature-group">';
         foreach ( $this->sources as $name => $source )
-            echo                            '<li><label for="source_' . $name . '" title="' . $source['path'] . '"><input id="source_' . $name . '" name="sources[]" type="checkbox" value="' . $name . '" ' . checked($name, in_array($name, $this->options['source_list'])?$name:false, false) . ' /> ' . $source['title'] . '</label></li>';
+            echo                            '<li><label for="source_' . $name . '" title="' . $source['path'] . '"><input id="source_' . $name . '" name="sources[]" type="checkbox" value="' . $name . '" ' . checked( true, in_array( $name, $this->options['source_list'] ), false ) . ' /> ' . $source['title'] . '</label></li>';
         echo                            '</ol>' .
                                         '<div class="clear">' .
                                     '</div>' .
@@ -616,6 +636,10 @@ class Backup {
                             '<tr valign="top">' .
                                 '<th scope="row"><label for="exclude">' . __('Exclude list', $this->text_domain) . '</label></th>' .
                                 '<td><input id="exclude" name="exclude" type="text" class="regular-text code" placeholder="' . __('Comma separated paths to exclude.', $this->text_domain) . '" value="' . esc_html(implode(', ', $this->options['exclude_list'])) . '" /></td>' .
+                            '</tr>' .
+                            '<tr valign="top">' .
+                                '<th scope="row"><label for="include">' . __('Include list', $this->text_domain) . '</label></th>' .
+                                '<td><input id="include" name="include" type="text" class="regular-text code" placeholder="' . __('Comma separated paths to include.', $this->text_domain) . '" value="' . esc_html(implode(', ', $this->options['include_list'])) . '" /></td>' .
                             '</tr>' .
                         '</tbody>' .
                     '</table>' .
@@ -631,6 +655,33 @@ class Backup {
                             '<tr valign="top">' .
                                 '<th scope="row"><label for="time_limit">' . __('Time limit', $this->text_domain) . '</label></th>' .
                                 '<td><input id="time_limit" name="time_limit" class="small-text" type="number" min="5" step="5" value="' . intval($this->options['time_limit']) . '" /> <span>' . __("seconds", $this->text_domain) . '</span></td>' .
+                            '</tr>' .
+                        '</tbody>' .
+                    '</table>' .
+                '</div>' .
+                '<div class="comment-item">' .
+                    '<h4>' . __('HTTP options', $this->text_domain) . '</h4>' .
+                    '<table class="form-table">' .
+                        '<tbody>' .
+                            '<tr valign="top">' .
+                                '<th scope="row"><label for="request_timeout">' . __('Request timeout', $this->text_domain) . '</label></th>' .
+                                '<td><input id="request_timeout" name="request_timeout" class="small-text" type="number" min="1" step="1" value="' . intval($this->options['request_timeout']) . '" /> <span>' . __("seconds", $this->text_domain) . '</span></td>' .
+                            '</tr>' .
+                            '<tr valign="top">' .
+                                '<th scope="row">' . __('SSL verification', $this->text_domain) . '</th>' .
+                                '<td><label for="ssl_verify"><input id="ssl_verify" name="ssl_verify" type="checkbox" value="" ' . checked( true, $this->options['ssl_verify'], false ) . ' /> ' . __("Enable SSL verification.", $this->text_domain) . '</label></td>' .
+                            '</tr>' .
+                            '<tr valign="top">' .
+                                '<th scope="row">' . __('Disable transports', $this->text_domain) . '</th>' .
+                                '<td>' .
+                                    '<div class="feature-filter">' .
+                                        '<ol class="feature-group">';
+                                        foreach ( $this->http_transports as $transport )
+            echo                            '<li><label for="transport_' . $transport . '"><input id="transport_' . $transport . '" name="transports[]" type="checkbox" value="' . $transport . '" ' . checked( true, in_array( $transport, $this->options['disabled_transports'] ), false ) . ' /> ' . $transport . '</label></li>';
+        echo                            '</ol>' .
+                                        '<div class="clear">' .
+                                    '</div>' .
+                                '</td>' .
                             '</tr>' .
                         '</tbody>' .
                     '</table>' .
@@ -652,7 +703,7 @@ class Backup {
             $header = explode("\t", $header);
             foreach ( $lines as $i => $l ) {
                 $lines[$i] = explode("\t", $l);
-            } 
+            }
 
             echo '<table class="widefat fixed"><thead><tr>';
             foreach ( $header as $i => $h )
@@ -666,7 +717,7 @@ class Backup {
             }
             echo '</tbody></table>';
         }
-        else 
+        else
             echo '<p>' . __("There is no log file to display or the file is empty.", $this->text_domain) . '</p>';
     }
 
@@ -706,7 +757,7 @@ class Backup {
                     $this->options['time_limit'] = $time_limit;
                 else
                     $this->messages['error'][] = __('The upload time limit must be at least 5 seconds.', $this->text_domain);
-            }  
+            }
 
             // Validate and save local and drive numbers.
             if ( isset($_POST['local_number']) ) {
@@ -744,11 +795,24 @@ class Backup {
                 }
             }
 
+            // Handle disabled transports
+            if ( isset( $_POST['transports'] ) && 3 == count( $_POST['transports'] ) )
+                $this->messages['error'][] = __( "You cannot have all HTTP transports disabled.", $this->text_domain );
+            else
+                $this->options['disabled_transports'] = $_POST['transports'];
+
             // Handle exlclude list.
             if ( isset($_POST['exclude']) ) {
                 $this->options['exclude_list'] = explode(',', $_POST['exclude']);
                 foreach ( $this->options['exclude_list'] as $i => $v )
                     $this->options['exclude_list'][$i] = trim($v);
+            }
+
+            // Handle include list.
+            if ( isset($_POST['include']) ) {
+                $this->options['include_list'] = explode(',', $_POST['include']);
+                foreach ( $this->options['include_list'] as $i => $v )
+                    $this->options['include_list'][$i] = trim($v);
             }
 
             // If we have any error messages to display don't go any further with the function execution.
@@ -759,7 +823,13 @@ class Backup {
 
             if ( isset($_POST['drive_folder']) )
                 $this->options['drive_folder'] = $_POST['drive_folder'];
-            
+
+            if ( isset( $_POST['ssl_verify'] ) )
+                $this->options['ssl_verify'] = true;
+            else
+                $this->options['ssl_verify'] = false;
+
+            $this->options['request_timeout'] = intval( $_POST['request_timeout'] );
 
             // Handle scheduling.
             if ( isset($_POST['backup_frequency']) && $this->options['backup_frequency'] != $_POST['backup_frequency'] ) {
@@ -811,10 +881,12 @@ class Backup {
         $initial_memory = memory_get_usage(true);
         // We might need a lot of memory for this
         @ini_set('memory_limit', apply_filters('admin_memory_limit', WP_MAX_MEMORY_LIMIT));
+        // Set the time limit. It might be needed for the archive creation process.
+        @set_time_limit($this->options['time_limit']);
 
         $file_name = $this->time . '.zip';
         $file_path = $this->local_folder . '/' . $file_name;
-        
+
         // Create database dump sql file.
         if ( in_array('database', $this->options['source_list']) ) {
             $this->log('NOTICE', "Attempting to dump database to '" . $this->dump_file . "'.");
@@ -826,23 +898,30 @@ class Backup {
             }
 
             $this->log('NOTICE', "The database dump was completed successfully in " . round($dump_time, 2) . " seconds.");
-        }    
+        }
 
         $exclude = array_merge($this->options['exclude_list'], $this->exclude);
         foreach ( $exclude as $i => $path )
-            $exclude[$i] = absolute_path($path, ABSPATH);
+            if ( false !== strpos( $path, '/' ) || false !== strpos( $path, "\\" ) )
+                $exclude[$i] = absolute_path($path, ABSPATH);
 
         $sources = array();
         foreach ( $this->options['source_list'] as $source )
             $sources[] = $this->sources[$source]['path'];
-        
+
         // Remove subdirectories.
         $count = count($sources);
         for ( $i = 0; $i < $count; $i++ )
             for ( $j = 0; $j < $count; $j++ )
-                if ( $j != $i && isset($sources[$i]) && isset($sources[$j]) && 
+                if ( $j != $i && isset($sources[$i]) && isset($sources[$j]) &&
                     is_subdir($sources[$j], $sources[$i]) && $this->sources['database']['path'] != $sources[$j] )
                     unset($sources[$j]);
+
+        $include = $this->options['include_list'];
+        foreach ( $include as $i => $path )
+            $include[$i] = absolute_path( $path, ABSPATH );
+
+        $sources = array_merge( $sources, $include );
 
         // Create archive from all enabled sources.
         $this->log('NOTICE', "Attempting to create archive '" . $file_path . "'.");
@@ -889,11 +968,11 @@ class Backup {
 
                     // Update quotas if uploading to Google Drive was successful.
                     $this->update_quota();
-                    
+
                     // Delete excess Drive files only if we have a successful upload.
                     $this->purge_drive_files();
                 }
-            }    
+            }
         }
         else {
             $this->options['local_files'][] = $file_path;
@@ -923,7 +1002,7 @@ class Backup {
         // We need an instance of GDocs here to talk to the Google Documents List API.
         if ( ! is_gdocs($this->gdocs) )
             $this->gdocs = new GDocs($access_token);
-        
+
         $file = $this->gdocs->get_resume_item();
         if ( !$file ) {
             $this->log("WARNING", "There is no upload to resume.");
@@ -971,7 +1050,7 @@ class Backup {
                 else
                     $this->log('NOTICE', "Deleted Google Drive file '" . $r . "'.");
             }
-        return new WP_Error('missing_gdocs', "An instance of GDocs is needed to delete Google Drive resources.");   
+        return new WP_Error('missing_gdocs', "An instance of GDocs is needed to delete Google Drive resources.");
     }
 
     /**
@@ -981,7 +1060,7 @@ class Backup {
         while ( count($this->options['local_files']) > $this->options['local_number'] )
             if ( delete_path($f = array_shift($this->options['local_files'])) )
                 $this->log('NOTICE', "Purged backup file '" . $f . "'.");
-            else    
+            else
                 $this->log('WARNING', "Could not delete file '" . $f . "'.");
     }
 
@@ -1021,7 +1100,7 @@ class Backup {
 
     /**
      * Checks if the authorization/authentication page is requested.
-     * 
+     *
      * @return boolean Returns TRUE if the authorization page is requested, FALSE otherwise.
      */
     function is_auth() {
@@ -1048,7 +1127,7 @@ class Backup {
                     $result = $this->update_quota();
                     update_option('backup_options', $this->options);
                 }
-            }    
+            }
             elseif ( 'revoke' == $_GET['state'] ) {
                 $result = $this->goauth->revoke_refresh_token();
                 if ( is_wp_error($result) ) {
@@ -1070,7 +1149,7 @@ class Backup {
                 $this->options['client_secret'] = $_POST['client_secret'];
                 update_option('backup_options', $this->options);
                 $this->goauth = new GOAuth($this->options['client_id'], $this->options['client_secret'], $this->redirect_uri);
-                $res = $this->goauth->request_authorization($this->goauth_scope, 'token');
+                $res = $this->goauth->request_authorization($this->scope, 'token');
                 if ( is_wp_error($res) )
                     $this->log_wp_error($res);
                 exit;

@@ -1,6 +1,6 @@
 <?php
 /*  Copyright 2012 Sorin Iclanzan  (email : sorin@iclanzan.com)
-    
+
     This file is part of Backup.
 
     Backup is free software: you can redistribute it and/or modify
@@ -58,10 +58,10 @@ function db_dump( $dump_file ) {
             foreach ( $tables as $table_array ) {
                 $table = array_shift( array_values( $table_array ) );
                 $create = $wpdb->get_var( "SHOW CREATE TABLE " . $table, 1 );
-                
+
                 fwrite( $handle, "/* Dump of table `" . $table . "`\n" );
                 fwrite( $handle, " * ------------------------------------------------------------*/\n\n" );
-                
+
                 fwrite( $handle, "DROP TABLE IF EXISTS `" . $table . "`;\n\n" . $create . ";\n\n" );
 
                 $data = $wpdb->get_results("SELECT * FROM `" . $table . "`", ARRAY_A );
@@ -86,7 +86,7 @@ function db_dump( $dump_file ) {
                     fwrite( $handle, "\nUNLOCK TABLES;\n\n" );
                 }
             }
-        }    
+        }
 
         fwrite( $handle, "/*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;\n" );
         fwrite( $handle, "/*!40101 SET SQL_MODE=@OLD_SQL_MODE */;\n" );
@@ -106,7 +106,7 @@ if ( !function_exists('zip') ) :
  * Create a Zip archive from a file or directory.
  *
  * Uses ZipArchive with PclZip as a fallback.
- * 
+ *
  * @param  array  $sources     List of paths to files and directories to be archived.
  * @param  string $destination Destination file where the archive will be stored.
  * @param  array  $exclude     Directories and/or files to exclude from archive, defaults to empty array.
@@ -129,7 +129,7 @@ if ( !function_exists('_zip_create_ziparchive') ) :
  * Create a zip archive using the ZipArchive class
  *
  * You should not use this function directly. Use the 'zip' function above.
- * 
+ *
  * @param  array  $sources     List of paths to files and directories to be archived.
  * @param  string $destination Destination file where the archive will be stored.
  * @param  array  $exclude     Directories and/or files to exclude from archive, defaults to empty array.
@@ -166,7 +166,7 @@ if ( !function_exists('_zip_create_pclzip') ) :
  * Create a zip archive using the PclZip class
  *
  * You should not use this function directly. Use the 'zip' function above.
- * 
+ *
  * @param  array  $sources     List of paths to files and directories to be archived.
  * @param  string $destination Destination file where the archive will be stored.
  * @param  array  $exclude     Directories and/or files to exclude from archive, defaults to empty array.
@@ -188,14 +188,14 @@ function _zip_create_pclzip( $sources, $destination, $exclude = array() ) {
                 if ( 0 == $res )
                     return new WP_Error('pclzip', $zip->errorInfo(true));
             }
-    return true;      
+    return true;
 }
 endif;
 
 if ( !function_exists('parent_dir') ) :
 /**
  * Works out the parent directory of a path.
- * 
+ *
  * @param  string $dir The directory to get the parent of.
  * @return string      Returns the parent directory or the input path if no parent can be determined.
  */
@@ -248,7 +248,7 @@ function directory_list($base_path, $recursive = true, $exclude = array()) {
             }
         }
         @closedir($folder_handle);
-        
+
         return $result_list;
     }
 }
@@ -257,11 +257,11 @@ endif;
 if ( !function_exists('relative_path') ) :
 /**
  * Get relative path from absolute path
- * 
+ *
  * Function taken from http://php.net/manual/en/function.realpath.php user contributions.
- * 
+ *
  * @param  string $from Base absolute path from which to work out the relative path.
- * @param  string $to   Absolute path which will be made relative. 
+ * @param  string $to   Absolute path which will be made relative.
  * @return string       Returns a relative path.
  */
 function relative_path($from, $to) {
@@ -296,34 +296,31 @@ endif;
 
 if ( !function_exists('absolute_path') ) :
 /**
- * Transforms path to absolute filesystem path with forward slashes. 
- * 
+ * Transforms path to absolute filesystem path with forward slashes.
+ *
  * @param  string $path Path to filter.
  * @param  string $base Absolute path to which to resolve a relative path.
  * @return mixed        Returns the filtered path on success or FALSE on failure
  */
 function absolute_path( $path, $base ) {
     $path = str_replace('\\', '/', $path);
-    if ( path_is_absolute($path) ) // if $path is already absolute we have nothing more to do
+    if ( path_is_absolute($path) ) // If $path is already absolute we have nothing more to do.
         return $path;
 
-    if ( ! path_is_absolute($base) ) // $base needs to be an absolute path
+    if ( ! path_is_absolute($base) ) // $base needs to be an absolute path.
         return false;
     $base = trailingslashit(str_replace('\\', '/', $base));
 
-    if ( strstr($path, '/') ) {
-        $first_two = substr($path, 0, 2);
-        if ( './' == $first_two )
-            $path = $base . substr($path, 2);
-        elseif ( '..' == $first_two ) {
-            $path = $base . $path;
-            $pattern = '#\w+/\.\./#';
-            while( preg_match($pattern, $path) )
-                $path = preg_replace($pattern, '', $path);
-        }
-        else
-            $path = $base . $path;
-
+    if( '../' == substr( $path, 0, 3 ) ) {
+        $path = $base . $path;
+        $pattern = '#\w+/\.\./#';
+        while( preg_match($pattern, $path) )
+            $path = preg_replace($pattern, '', $path);
+    }
+    else {
+        if( './' == substr( $path, 0 , 2 ) )
+            $path = substr($path, 2);
+        $path = $base . $path;
     }
     return $path;
 }
@@ -332,7 +329,7 @@ endif;
 if ( !function_exists('delete_path') ) :
 /**
  * Delete filesystem files and directories.
- * 
+ *
  * Code taken from WP_Filesystem_Direct class.
  *
  * @param  string  $file      Path to the file or directory to delete.
@@ -368,7 +365,7 @@ endif;
 if ( !function_exists('get_tail') ) :
 /**
  * Get the last lines of a file.
- * 
+ *
  * @param  string  $file        File to be read.
  * @param  integer $line_count  The number of lines to return.
  * @return array                Returns an array containing the last lines of the file.
@@ -399,7 +396,7 @@ endif;
 if ( !function_exists('get_first_line') ) :
 /**
  * Get the first line of a file.
- * 
+ *
  * @param  string $file Path to a file.
  * @return mixed        Returns the trimmed first line of a file on success or FALSE on failure.
  */
@@ -419,7 +416,7 @@ endif;
 if ( !function_exists('is_gdocs') ) :
 /**
  * Checks if a variable is an instance of GDocs.
- * 
+ *
  * @param  mixed   $thing Variable to check.
  * @return boolean        Returns TRUE if the variable is an instance of GDocs, FALSE otherwise.
  */
@@ -433,7 +430,7 @@ endif;
 if ( !function_exists('is_goauth') ) :
 /**
  * Checks if a variable is an instance of GOAuth.
- * 
+ *
  * @param  mixed   $thing Variable to check.
  * @return boolean        Returns TRUE if the variable is an instance of GOAuth, FALSE otherwise.
  */
