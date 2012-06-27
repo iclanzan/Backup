@@ -19,18 +19,18 @@
 
 /**
  * Google Docs class
- * 
+ *
  * Implements communication with Google Docs via the Google Documents List v3 API.
  *
  * Currently uploading, resuming and deleting resources is implemented as well as retrieving quotas.
- * 
+ *
  * @uses  WP_Error for storing error messages.
  */
 class GDocs {
-	
+
 	/**
 	 * Stores the API version.
-	 * 
+	 *
 	 * @var string
 	 * @access private
 	 */
@@ -39,7 +39,7 @@ class GDocs {
 
 	/**
 	 * Stores the base URL for the API requests.
-	 * 
+	 *
 	 * @var string
 	 * @access private
 	 */
@@ -60,7 +60,7 @@ class GDocs {
 
 	/**
 	 * Stores feeds to avoid requesting them again for successive use.
-	 * 
+	 *
 	 * @var array
 	 * @access private
 	 */
@@ -68,22 +68,39 @@ class GDocs {
 
 	/**
 	 * Stores the handle of the file open for uploading.
-	 * 
+	 *
 	 * @var resource
 	 * @access private
 	 */
 	private $file_handle;
 
 	/**
-	 * Files are uploadded in chunks of this size in bytes .
+	 * Files are uploadded in chunks of this size in bytes.
+	 *
 	 * @var integer
 	 * @access private
 	 */
 	private $chunk_size;
 
 	/**
+	 * Stores whether or not to verify host SSL certificate.
+	 *
+	 * @var boolean
+	 * @access private
+	 */
+	private $ssl_verify;
+
+	/**
+	 * Stores the number of seconds to wait for a response before timing out.
+	 *
+	 * @var integer
+	 * @access private
+	 */
+	private $request_timeout;
+
+	/**
 	 * Stores the MIME type of the file that is uploading
-	 * 
+	 *
 	 * @var string
 	 * @access private
 	 */
@@ -91,7 +108,7 @@ class GDocs {
 
 	/**
 	 * Stores information about uploads that might need to be resumed.
-	 * 
+	 *
 	 * @var array
 	 * @access private
 	 */
@@ -99,7 +116,7 @@ class GDocs {
 
 	/**
 	 * Stores the ID of the item that will be resumed
-	 * 
+	 *
 	 * @var array
 	 * @access private
 	 */
@@ -107,7 +124,7 @@ class GDocs {
 
 	/**
 	 * Stores the maximum number of resume attempts
-	 * 
+	 *
 	 * @var integer
 	 * @access private
 	 */
@@ -115,14 +132,14 @@ class GDocs {
 
 	/**
 	 * This is true if a failed upload is resumable.
-	 * 
+	 *
 	 * @var boolean
 	 */
 	private $resumable;
 
 	/**
 	 * Stores the number of seconds the upload process is allowed to run
-	 * 
+	 *
 	 * @var integer
 	 * @access private
 	 */
@@ -130,14 +147,14 @@ class GDocs {
 
 	/**
 	 * Stores a timer for upload processes
-	 * 
+	 *
 	 * @var array
 	 */
 	private $timer;
 
 	/**
 	 * Constructor - Sets the access token.
-	 * 
+	 *
 	 * @param  string $token Access token
 	 */
 	function __construct( $token ) {
@@ -148,7 +165,9 @@ class GDocs {
 		$this->chunk_size = 524288; // 512 KiB
 		$this->time_limit = 120; // 2 minutes
 		$this->max_resume_attempts = 5;
+		$this->request_timeout = 5;
 		$this->resumable = false;
+		$this->ssl_verify = true;
 		$this->resume_list = get_option( 'gdocs_resume' );
 		$this->timer = array(
 			'start' => 0,
@@ -172,16 +191,25 @@ class GDocs {
 					$this->chunk_size = floatval($value) * 1024 * 1024; // Transform from MiB to bytes
 					return true;
 				}
-				break;	
+				break;
 			case 'time_limit':
 				if ( intval($value) >= 5 ) {
 					$this->time_limit = intval($value);
 					return true;
 				}
 				break;
+			case 'ssl_verify':
+				$this->ssl_verify = ( bool ) $value;
+				return true;
+			case 'request_timeout':
+				if ( intval( $value ) > 0 )	{
+					$this->request_timeout = intval( $value );
+					return true;
+				}
+				break;
 			case 'max_resume_attempts':
 				$this->max_resume_attempts = intval($value);
-				return true;	
+				return true;
 		}
 		return false;
 	}
@@ -198,6 +226,10 @@ class GDocs {
 				return $this->chunk_size;
 			case 'time_limit':
 				return $this->time_limit;
+			case 'ssl_verify':
+				return $this->ssl_verify;
+			case 'request_timeout':
+				return $this->request_timeout;
 			case 'max_resume_attempts':
 				return $this->max_resume_attempts;
 		}
@@ -216,11 +248,13 @@ class GDocs {
 	 * @return mixed           Returns an array containing the response on success or an instance of WP_Error on failure.
 	 */
 	private function request( $url, $method = 'GET', $headers = array(), $body = NULL ) {
-		$args = array( 
-			'method' => $method,
+		$args = array(
+			'method'      => $method,
+			'timeout'     => $this->request_timeout,
 			'httpversion' => '1.1',
 			'redirection' => 0,
-			'headers' => array( 
+			'sslverify'   => $this->ssl_verify,
+			'headers'     => array(
 				'Authorization' => 'Bearer ' . $this->token,
 				'GData-Version' => $this->gdata_version
 			)
@@ -235,7 +269,7 @@ class GDocs {
 
 	/**
 	 * Returns the feed from a URL.
-	 * 
+	 *
 	 * @access public
 	 * @param  string $url The feed URL.
 	 * @return mixed       Returns the feed as an instance of SimpleXMLElement on success or an instance of WP_Error on failure.
@@ -252,7 +286,7 @@ class GDocs {
 
 	/**
 	 * Requests a feed and adds it to cache.
-	 * 
+	 *
 	 * @access private
 	 * @param  string $url The feed URL.
 	 * @return mixed       Returns TRUE on success or an instance of WP_Error on failure.
@@ -269,7 +303,7 @@ class GDocs {
     			return new WP_Error( 'invalid_data', "Could not create SimpleXMLElement from '" . $result['body'] . "'." );
 
     		$this->cache[$url] = $feed;
-    		return true;	       
+    		return true;
     	}
 	    return new WP_Error( 'bad_response', "Received response code '" . $result['response']['code'] . " " . $result['response']['message'] . "' while trying to get '" . $url . "'. Response body: " . $result['body'] );
 
@@ -299,7 +333,7 @@ class GDocs {
 	 *
 	 * @access private
 	 * @param  string $parent The Id of the folder where the upload is to be made. Default is empty string.
-	 * @return mixed          Returns a link on success, instance of WP_Error on failure. 
+	 * @return mixed          Returns a link on success, instance of WP_Error on failure.
 	 */
 	private function get_resumable_create_media_link( $parent = '' ) {
 	    $url = $this->base_url;
@@ -310,16 +344,16 @@ class GDocs {
 
 		if ( is_wp_error( $feed ) )
 			return $feed;
-	    	
+
     	foreach ( $feed->link as $link )
             if ( $link['rel'] == 'http://schemas.google.com/g/2005#resumable-create-media' )
                 return ( string ) $link['href'];
-        return new WP_Error( 'not_found', "The 'resumable_create_media_link' was not found in feed." );    
+        return new WP_Error( 'not_found', "The 'resumable_create_media_link' was not found in feed." );
 	}
 
 	/**
 	 * Get used quota in bytes.
-	 * 
+	 *
 	 * @access public
 	 * @return mixed  Returns the number of bytes used in Google Docs on success or an instance of WP_Error on failure.
 	 */
@@ -332,7 +366,7 @@ class GDocs {
 
 	/**
 	 * Get total quota in bytes.
-	 * 
+	 *
 	 * @access public
 	 * @return string|WP_Error Returns the total quota in bytes in Google Docs on success or an instance of WP_Error on failure.
 	 */
@@ -345,7 +379,7 @@ class GDocs {
 
 	/**
 	 * Function to upload a file to Google Docs.
-	 * 
+	 *
 	 * @uses   wp_check_filetype
 	 * @access public
 	 * @param  string  $file   Path to the file that is to be uploaded.
@@ -368,7 +402,7 @@ class GDocs {
 	    $size = filesize( $file );
 
 	    $body = '<?xml version=\'1.0\' encoding=\'UTF-8\'?><entry xmlns="http://www.w3.org/2005/Atom" xmlns:docs="http://schemas.google.com/docs/2007"><category scheme="http://schemas.google.com/g/2005#kind" term="http://schemas.google.com/docs/2007#file"/><title>' . $title . '</title></entry>';
-	    
+
 	    $headers = array(
 	        'Content-Type' => 'application/atom+xml',
 	        'X-Upload-Content-Type' => $type,
@@ -376,12 +410,12 @@ class GDocs {
 	    );
 
 	    $url = $this->get_resumable_create_media_link( $parent );
-	    
+
 	    if ( is_wp_error( $url ) )
 	    	return $url;
 
 	    $url .= '?convert=false'; // needed to upload a file
-	    
+
 	    $result = $this->request( $url, 'POST', $headers, $body );
 
 	    if ( is_wp_error( $result ) )
@@ -410,13 +444,13 @@ class GDocs {
 		if ( !$this->file_handle = fopen( $file, "rb" ) )
 			return new WP_Error( 'open_error', "Could not open file '" . $file . "' for reading." );
 
-        return $this->upload_chunks( $file, 0 );          
+        return $this->upload_chunks( $file, 0 );
 	}
 
 
 	/**
 	 * Resume an interrupted upload.
-	 * 
+	 *
 	 * @access public
 	 * @return mixed   Returns Google Docs resource ID on success, an instance of WP_Error on failure.
 	 */
@@ -430,7 +464,7 @@ class GDocs {
 			return new WP_Error('not_file', "The path '" . $this->resume_list[$id]['path'] . "' does not point to a readable file. Upload has been canceled.");
 		}
 
-		// Mark resumable item as being in use to prevent concurrent GDocs instances from using it. 
+		// Mark resumable item as being in use to prevent concurrent GDocs instances from using it.
 		$this->resume_list[$id]['used'] = true;
 		$this->resume_list[$id]['attempt']++;
 		update_option( 'gdocs_resume', $this->resume_list );
@@ -442,7 +476,7 @@ class GDocs {
 			return $result;
 		}
 		if ( $result['response']['code'] != '308' ) {
-			$this->resumable = true;	
+			$this->resumable = true;
 			return new WP_Error('bad_response', "Received response code '" . $result['response']['code'] . " " . $result['response']['message'] . "' while trying to resume the upload of file '" . $this->resume_list[$id]['title'] . "'.");
 		}
 		if( isset( $result['headers']['location'] ) )
@@ -464,7 +498,7 @@ class GDocs {
 
 	/**
 	 * Get the ID of the first item found that needs to be resumed.
-	 * 
+	 *
 	 * @access private
 	 * @return mixed   Returns a string representing the ID of the item that needs to be resumed or FALSE if there are no items.
 	 */
@@ -483,7 +517,7 @@ class GDocs {
 
 	/**
 	 * Get the item which is to be resumed.
-	 * 
+	 *
 	 * @access public
 	 * @return mixed  Returns an array with information about the item to be resumed or FALSE if there is no resumable item.
 	 */
@@ -495,7 +529,7 @@ class GDocs {
 
 	/**
 	 * Recursively upload all chunks of a file.
-	 * 
+	 *
 	 * @access private
 	 * @param  string  $id      ID of the file to upload, as found in $this->resume_list.
 	 * @param  integer $pointer Byte where to start the upload from.
@@ -524,18 +558,18 @@ class GDocs {
         	else
         		$pointer += $chunk_size;
         	if ( isset( $result['headers']['location'] ) )
-        		$this->resume_list[$id]['location'] = $result['headers']['location'];	
+        		$this->resume_list[$id]['location'] = $result['headers']['location'];
         	$this->timer['cycle'] = microtime(true) - $cycle_start;
         	if ( $this->approaching_timeout() ) {
         		$this->resume_list[$id]['used'] = false;
         		update_option('gdocs_resume', $this->resume_list);
         		$this->resumable = true;
         		return new WP_Error('timeout', "The upload process timed out but can be resumed.");
-        	}	
+        	}
         	else {
         		unset($chunk); // We need to unset this otherwise it will be kept in memory until the upload finishes.
         		return $this->upload_chunks( $id, $pointer );
-        	}	
+        	}
         }
         if ( $result['response']['code'] == '201' ) {
         	fclose( $this->file_handle );
@@ -546,7 +580,7 @@ class GDocs {
 			// Stop timer
 			$this->timer['stop'] = microtime(true);
 			$this->timer['delta'] = $this->timer['stop'] - $this->timer['start'];
-				
+
 			unset($this->resume_item_id);
 			unset( $this->resume_list[$id] );
 			update_option( 'gdocs_resume', $this->resume_list );
@@ -596,7 +630,7 @@ class GDocs {
 
 	/**
 	 * Checks if the script is nearing max execution time.
-	 * 
+	 *
 	 * @access private
 	 * @return boolean Returns TRUE if nearing max execution time, FALSE otherwise.
 	 */
