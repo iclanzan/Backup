@@ -416,10 +416,10 @@ class Backup {
      * @return array         Returns the list of links with the custom link added.
      */
     function action_links( $links, $file ) {
-        if ( $file != plugin_basename(__FILE__))
+        if ( $file != plugin_basename(__FILE__) )
             return $links;
 
-        $settings_link = sprintf( '<a href="options-general.php?page=backup">%s</a>', __( 'Settings', $this->text_domain ) );;
+        $settings_link = sprintf( '<a href="options-general.php?page=backup">%s</a>', __( 'Settings', $this->text_domain ) );
 
         array_unshift($links, $settings_link);
 
