@@ -54,18 +54,20 @@ echo $this->get_messages_html();
                                         <option value="weekly" <?php selected( 'weekly', $this->options['backup_frequency'] ); ?> ><?php _e( 'Weekly', $this->text_domain ); ?></option>
                                         <option value="monthly" <?php selected( 'monthly', $this->options['backup_frequency'] ); ?> ><?php _e( 'Monthly', $this->text_domain ); ?></option>
                                     </select>
-                                    <label id="start_day_label" for="start_day" class="hide-if-js"><?php _e( "starting on", $this->text_domain ); ?>
+                                    <div id="start_day_div" class="hide-if-js">
+                                        <label for="start_day"> <?php _e( "starting on", $this->text_domain ); ?> </label>
                                         <select id="start_day" name="start_day">
                                             <?php
                                             for ($day_index = 0; $day_index <= 6; $day_index++)
                                                 echo '<option value="' . esc_attr($day_index) . '">' . $wp_locale->get_weekday($day_index) . '</option>';
                                             ?>
                                         </select>
-                                    </label>
-                                    <label id="start_time_label" for="start_hour" class="hide-if-js"><?php _e( "at", $this->text_domain ); ?>
-                                        <input id="start_hour" name="start_hour" type="number" min="0" max="24" step="1" class="small-text code" value="00" />:<input id="start_minute" name="start_minute" type="number" min="0" max="59" step="1" class="small-text code" value="00" />
-                                    </label>
-                                    <div class="description"><?php printf( __( "Select %s if you want to add a cron job to do backups.", $this->text_domain ), "<kbd>" . __( "never", $this->text_domain ) . "</kbd>" ); ?></div>
+                                    </div>
+                                    <div id="start_time_div" class="hide-if-js">
+                                        <label for="start_hour"> <?php _e( "at", $this->text_domain ); ?> </label>
+                                        <input id="start_hour" name="start_hour" type="number" min="0" max="23" step="1" class="small-text code" value="0" /><span>:</span><input id="start_minute" name="start_minute" type="number" min="0" max="59" step="1" class="small-text code" value="0" />
+                                        <div class="description"><?php printf( __( "Select %s if you want to add a cron job to do backups.", $this->text_domain ), "<kbd>" . __( "never", $this->text_domain ) . "</kbd>" ); ?></div>
+                                    </div>
                                 </td>
                             </tr>
                         </tbody>
@@ -91,14 +93,14 @@ echo $this->get_messages_html();
             val = $("#backup_frequency option:selected").val();
             switch(val) {
                 case "never":
-                    $("#start_day_label, #start_time_label").addClass("hide-if-js");
+                    $("#start_day_div, #start_time_label").addClass("hide-if-js");
                     break;
                 case "daily":
-                    $("#start_day_label").addClass("hide-if-js");
-                    $("#start_time_label").removeClass("hide-if-js");
+                    $("#start_day_div").addClass("hide-if-js");
+                    $("#start_time_div").removeClass("hide-if-js");
                     break;
                 default:
-                    $("#start_day_label, #start_time_label").removeClass("hide-if-js");
+                    $("#start_day_div, #start_time_label").removeClass("hide-if-js");
             }
         });
     });

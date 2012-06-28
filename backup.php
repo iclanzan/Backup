@@ -448,6 +448,7 @@ class Backup {
         $this->options['disabled_transports'] = array();
         $this->options['ssl_verify']          = true;
         $this->options['plugin_version']      = $this->version;
+        update_option( 'backup_options', $this->options );
     }
 
     /**
@@ -753,7 +754,7 @@ class Backup {
             check_admin_referer('backup_options');
 
             // If we dont have a valid recurrence frequency stop function execution.
-            if ( isset($_POST['backup_frequency']) && !in_array($_POST['backup_frequency'], array_keys(wp_get_schedules()) )  && $_POST['backup_frequency'] != 'never' )
+            if ( !in_array($_POST['backup_frequency'], array_keys(wp_get_schedules()) )  && $_POST['backup_frequency'] != 'never' )
                 wp_die(__('You were caught trying to do an illegal operation.', $this->text_domain), __('Illegal operation', $this->text_domain));
 
             // If we have sources that we haven't defined stop function execution.
@@ -856,7 +857,7 @@ class Backup {
             $this->options['request_timeout'] = intval( $_POST['request_timeout'] );
 
             // Handle scheduling.
-            if ( isset($_POST['backup_frequency']) && $this->options['backup_frequency'] != $_POST['backup_frequency'] ) {
+            if ( $this->options['backup_frequency'] != $_POST['backup_frequency'] || ( $_POST['start_hour'] != 0 && $_POST['start_minute'] != 0 ) ) {
                 // If we have already scheduled a backup before, clear it first.
                 if ( wp_next_scheduled('backup_schedule') ) {
                     wp_clear_scheduled_hook('backup_schedule');
