@@ -269,7 +269,7 @@ class Backup {
                 'chunk_size'          => 0.5, // MiB
                 'time_limit'          => 120, // seconds
                 'request_timeout'     => 5, // seconds
-                'disabled_transports' => array(),
+                'enabled_transports' => $this->http_transports,
                 'ssl_verify'          => true
             );
         }
@@ -306,8 +306,9 @@ class Backup {
         add_filter('plugin_action_links', array(&$this, 'action_links'), 10, 2);
 
         // Disable unwanted HTTP transports.
-        foreach ( $this->options['disabled_transports'] as $t )
-            add_filter( 'use_' . $t . '_transport', create_function( '', 'return false;' ) );
+        foreach ( $this->http_transports as $t )
+            if ( !in_array( $t, $this->options['enabled_transports'] ) )
+                add_filter( 'use_' . $t . '_transport', create_function( '', 'return false;' ) );
 
         // Add 'Backup' to the Settings admin menu; save default metabox layout in the database
         add_action('admin_menu', array(&$this, 'backup_menu'));
@@ -445,7 +446,7 @@ class Backup {
     protected function upgrade() {
         $this->options['include_list']        = array();
         $this->options['request_timeout']     = 5;
-        $this->options['disabled_transports'] = array();
+        $this->options['enabled_transports']  = $this->http_transports;
         $this->options['ssl_verify']          = true;
         $this->options['plugin_version']      = $this->version;
         update_option( 'backup_options', $this->options );
@@ -697,12 +698,12 @@ class Backup {
                                 '<td><label for="ssl_verify"><input id="ssl_verify" name="ssl_verify" type="checkbox" value="" ' . checked( true, $this->options['ssl_verify'], false ) . ' /> ' . __("Enable SSL verification.", $this->text_domain) . '</label></td>' .
                             '</tr>' .
                             '<tr valign="top">' .
-                                '<th scope="row">' . __('Disable transports', $this->text_domain) . '</th>' .
+                                '<th scope="row">' . __('Enabled transports', $this->text_domain) . '</th>' .
                                 '<td>' .
                                     '<div class="feature-filter">' .
                                         '<ol class="feature-group">';
                                         foreach ( $this->http_transports as $transport )
-            echo                            '<li><label for="transport_' . $transport . '"><input id="transport_' . $transport . '" name="transports[]" type="checkbox" value="' . $transport . '" ' . checked( true, in_array( $transport, $this->options['disabled_transports'] ), false ) . ' /> ' . $transport . '</label></li>';
+            echo                            '<li><label for="transport_' . $transport . '"><input id="transport_' . $transport . '" name="transports[]" type="checkbox" value="' . $transport . '" ' . checked( true, in_array( $transport, $this->options['enabled_transports'] ), false ) . ' /> ' . $transport . '</label></li>';
         echo                            '</ol>' .
                                         '<div class="clear">' .
                                     '</div>' .
