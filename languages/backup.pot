@@ -359,6 +359,10 @@ msgstr ""
 msgid "%s of %s used"
 msgstr ""
 
+#: backup.php:584
+msgid "Manual backup URL:"
+msgstr ""
+
 #: backup.php:590
 msgid "Make backup manually"
 msgstr ""
