@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Backup 2.1\n"
 "Report-Msgid-Bugs-To: http://wordpress.org/tag/backup\n"
-"POT-Creation-Date: 2012-06-23 11:06:22+00:00\n"
+"POT-Creation-Date: 2012-06-28 14:38:24+00:00\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -101,6 +101,10 @@ msgid ""
 "powerful websites and web apps. Backing up a WordPress website was never the "
 "easiest of tasks but it has become quite effortless with the help of the "
 "Backup plugin."
+msgstr ""
+
+#: backup.php:476
+msgid "Backup features"
 msgstr ""
 
 #: backup.php:476
