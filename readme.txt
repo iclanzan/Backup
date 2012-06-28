@@ -48,6 +48,7 @@ Apart from not being able to purge backups from Google Drive, Backup should work
 
 = 2.1 =
 * Added field to specify what paths to include in the backup.
+* Added ability to specify the day of the week and and the time when to schedule the first backup.
 * Added option to change the request timeout value.
 * Added option to disable specific HTTP transports.
 * Added option to disable SSL verification against a certificate.
