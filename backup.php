@@ -473,7 +473,7 @@ class Backup {
             'title'   => __('Overview', $this->text_domain),
             'content' => '<h3>' . __('Backup for WordPress', $this->text_domain) . '</h3><p>' . __('Regularly backing up a website is one of the most important duties of a webmaster and its value is only truly appreciated when things go horribly wrong (hacked website, hardware failure, software errors).', $this->text_domain) . '</p>' .
                          '<p>' . __('WordPress is a wonderful platform to build not just blogs, but also rich, powerful websites and web apps. Backing up a WordPress website was never the easiest of tasks but it has become quite effortless with the help of the Backup plugin.', $this->text_domain) . '</p>' .
-                         '<h3>Backup features</h3><p>' . __('Here are some of the features of the Backup plugin:', $this->text_domain) . '</p>' .
+                         '<h3>' . __('Backup features', $this->text_domain) . '</h3><p>' . __('Here are some of the features of the Backup plugin:', $this->text_domain) . '</p>' .
                          '<ul><li>' . __('Backup any or all of your site\'s directories and files.', $this->text_domain) . '</li>' .
                          '<li>' . __('Ability to fine-tune the contents of the backup archive by excluding specific files and folders.', $this->text_domain) . '</li>' .
                          '<li>' . __('Create a database dump and add it to the backup.', $this->text_domain) . '</li>' .
