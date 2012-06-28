@@ -472,11 +472,11 @@ class GDocs {
 		$headers = array( 'Content-Range' => 'bytes */' . $this->resume_list[$id]['size'] );
 		$result = $this->request( $this->resume_list[$id]['location'], 'PUT', $headers );
 		if( is_wp_error( $result ) ) {
-			$this->resumable = true;
+			$this->set_resumable( $id );
 			return $result;
 		}
 		if ( $result['response']['code'] != '308' ) {
-			$this->resumable = true;
+			$this->set_resumable( $id );
 			return new WP_Error('bad_response', "Received response code '" . $result['response']['code'] . " " . $result['response']['message'] . "' while trying to resume the upload of file '" . $this->resume_list[$id]['title'] . "'.");
 		}
 		if( isset( $result['headers']['location'] ) )
@@ -528,6 +528,22 @@ class GDocs {
 	}
 
 	/**
+	 * Set an item as being resumable and unused.
+	 */
+
+	/**
+	 * Set an item as being resumable and unused.
+	 *
+	 * @param  mixed $id The ID of the item to mark as resumable.
+	 * @return boolean  Returns what update_option returns.
+	 */
+	private function set_resumable( $id ) {
+		$this->resumable = true;
+		$this->resume_list[$id]['used'] = false;
+		return update_option( 'gdocs_resume', $this->resume_list );
+	}
+
+	/**
 	 * Recursively upload all chunks of a file.
 	 *
 	 * @access private
@@ -559,11 +575,12 @@ class GDocs {
         		$pointer += $chunk_size;
         	if ( isset( $result['headers']['location'] ) )
         		$this->resume_list[$id]['location'] = $result['headers']['location'];
-        	$this->timer['cycle'] = microtime(true) - $cycle_start;
+        	if ( $this->timer['cycle'] )
+        		$this->timer['cycle'] = ( microtime( true ) - $cycle_start + $this->timer['cycle'] ) / 2;
+        	else
+        		$this->timer['cycle'] = microtime(true) - $cycle_start;
         	if ( $this->approaching_timeout() ) {
-        		$this->resume_list[$id]['used'] = false;
-        		update_option('gdocs_resume', $this->resume_list);
-        		$this->resumable = true;
+        		$this->set_resumable( $id );
         		return new WP_Error('timeout', "The upload process timed out but can be resumed.");
         	}
         	else {
@@ -602,7 +619,7 @@ class GDocs {
 		// Mark resumable upload as not being used
 		$this->resume_list[$id]['used'] = false;
 		update_option( 'gdocs_resume', $this->resume_list );
-		$this->resumable = true;
+		$this->set_resumable( $id );
 	    return new WP_Error( 'bad_response', "Received response code '" . $result['response']['code'] . " " . $result['response']['message'] . "' while trying to upload a chunk of file '" . $this->resume_list[$id]['title'] . "'. The upload might be resumable." );
 	}
 

@@ -563,7 +563,7 @@ class Backup {
                          '<h3>' . __('HTTP options', $this->text_domain) . '</h3>' .
                          '<p><strong>' . __('Request timeout', $this->text_domain) . '</strong> - ' . __('Set this to the number of seconds the HTTP transport should wait for a response before timing out.', $this->text_domain) . '</p>' .
                          '<p><strong>' . __('SSL verification', $this->text_domain) . '</strong> - ' . __('Although not recommended, this option allows you to disable the host\'s SSL certificate verification.', $this->text_domain) . '</p>' .
-                         '<p><strong>' . __('Disabled transports', $this->text_domain) . '</strong> - ' . __('If having trouble with HTTP requests, disabling one or more of the transports might help. At least one transport must remain enabled.', $this->text_domain) . '</p>'
+                         '<p><strong>' . __('Enabled transports', $this->text_domain) . '</strong> - ' . __('If having trouble with HTTP requests, disabling one or more of the transports might help. At least one transport must remain enabled.', $this->text_domain) . '</p>'
         ) );
 
         $screen->set_help_sidebar(
@@ -614,18 +614,19 @@ class Backup {
      * Render Status meta box.
      */
     function metabox_status_content( $data ) {
+        $datetime_format = get_option( 'date_format' ) . " " . get_option( 'time_format' );
         echo '<div class="misc-pub-section">' . __('Current date and time:', $this->text_domain) . '<br/><strong>' .
-            date_i18n( get_option( 'date_format' ), $this->time ) .
+            date_i18n( $datetime_format, $this->time ) .
         '</strong></div>' .
         '<div class="misc-pub-section">' . __('Most recent backup:', $this->text_domain) . '<br/><strong>';
             if ( $this->options['last_backup'] )
-                echo date_i18n( get_option( 'date_format' ), $this->options['last_backup'] );
+                echo date_i18n( $datetime_format, $this->options['last_backup'] );
             else
                 _e('never', $this->text_domain);
         echo '</strong></div>' .
         '<div class="misc-pub-section">' . __('Next scheduled backup:', $this->text_domain) . '<br/><strong>';
             if ( $next = wp_next_scheduled('backup_schedule'))
-                echo date_i18n( get_option( 'date_format' ), $next );
+                echo date_i18n( $datetime_format, $next );
             else
                 _e('never', $this->text_domain);
         echo '</strong></div>';
@@ -821,11 +822,11 @@ class Backup {
                 }
             }
 
-            // Handle disabled transports
-            if ( isset( $_POST['transports'] ) && 3 == count( $_POST['transports'] ) )
+            // Handle transports
+            if ( !isset( $_POST['transports'] ) )
                 $this->messages['error'][] = __( "You cannot have all HTTP transports disabled.", $this->text_domain );
             else
-                $this->options['disabled_transports'] = $_POST['transports'];
+                $this->options['enabled_transports'] = $_POST['transports'];
 
             // Handle exlclude list.
             if ( isset($_POST['exclude']) ) {
@@ -835,10 +836,14 @@ class Backup {
             }
 
             // Handle include list.
-            if ( isset($_POST['include']) ) {
-                $this->options['include_list'] = explode(',', $_POST['include']);
-                foreach ( $this->options['include_list'] as $i => $v )
-                    $this->options['include_list'][$i] = trim($v);
+            if ( isset( $_POST['include'] ) ) {
+                if ( !empty( $_POST['include'] ) ) {
+                    $this->options['include_list'] = explode(',', $_POST['include']);
+                    foreach ( $this->options['include_list'] as $i => $v )
+                        $this->options['include_list'][$i] = trim($v);
+                }
+                else
+                    $this->options['include_list'] = array();
             }
 
             // If we have any error messages to display don't go any further with the function execution.
@@ -858,17 +863,17 @@ class Backup {
             $this->options['request_timeout'] = intval( $_POST['request_timeout'] );
 
             // Handle scheduling.
-            if ( $this->options['backup_frequency'] != $_POST['backup_frequency'] || ( $_POST['start_hour'] != 0 && $_POST['start_minute'] != 0 ) ) {
+            if ( $this->options['backup_frequency'] != $_POST['backup_frequency'] || ( $_POST['start_hour'] != 0 || $_POST['start_minute'] != 0 ) ) {
                 // If we have already scheduled a backup before, clear it first.
                 if ( wp_next_scheduled('backup_schedule') ) {
                     wp_clear_scheduled_hook('backup_schedule');
                 }
 
                 // Schedule backup if frequency is something else than never.
-                if ( $_POST['backup_frequency'] != 'never' ) {
+                if ( 'never' != $_POST['backup_frequency'] ) {
                     // This should not be translated!
                     $weekday = array( 'Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday' );
-                    $time = strtotime( "this " . $weekday[intval( $_POST['start_day'] )] . " at " . intval( $_POST['start_hour'] ) . ":" . intval( $_POST['start_minute'] ), $this->time );
+                    $time = strtotime( "this " . $weekday[intval( $_POST['start_day'] )] . " " . intval( $_POST['start_hour'] ) . ":" . intval( $_POST['start_minute'] ), $this->time );
                     wp_schedule_event($time, $_POST['backup_frequency'], 'backup_schedule');
                 }
 
@@ -976,6 +981,7 @@ class Backup {
 
                 $this->gdocs->set_option('chunk_size', $this->options['chunk_size']);
                 $this->gdocs->set_option('time_limit', $this->options['time_limit']);
+                $this->gdocs->set_option('request_timeout', $this->options['request_timeout']);
 
                 $this->log('NOTICE', 'Attempting to upload archive to Google Drive.');
                 $id = $this->gdocs->upload_file($file_path, $file_name, $this->options['drive_folder']);
@@ -1040,6 +1046,7 @@ class Backup {
 
         $this->gdocs->set_option('chunk_size', $this->options['chunk_size']);
         $this->gdocs->set_option('time_limit', $this->options['time_limit']);
+        $this->gdocs->set_option('request_timeout', $this->options['request_timeout']);
 
         $this->log('NOTICE', "Resuming upload of '" . $file['title'] . "'.");
         $id   = $this->gdocs->resume_upload();
