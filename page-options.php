@@ -1,4 +1,5 @@
 <?php
+global $wp_locale;
 // Display messages and errors
 echo $this->get_messages_html();
 ?>
@@ -10,8 +11,8 @@ echo $this->get_messages_html();
     <div id="poststuff" class="metabox-holder<?php echo 2 == $screen_layout_columns ? ' has-right-sidebar' : ''; ?>">
         <div id="side-info-column" class="inner-sidebar">
             <?php do_meta_boxes( $this->pagehook, 'side', '' ); ?>
-        </div>       
-    
+        </div>
+
         <form action="<?php echo admin_url( "options-general.php?page=backup&action=update" ); ?>" method="post">
             <?php wp_nonce_field( 'backup_options' ); ?>
             <input type="hidden" name="action" value="save_backup_options" />
@@ -46,14 +47,25 @@ echo $this->get_messages_html();
                             </tr>
                             <tr valign="top">
                                 <th scope="row"><label for="backup_frequency"><?php _e( 'When to back up', $this->text_domain ); ?></label></th>
-                                <td> 
+                                <td>
                                     <select id="backup_frequency" name="backup_frequency">
                                         <option value="never" <?php selected( 'never', $this->options['backup_frequency'] ); ?> ><?php _e( 'Never', $this->text_domain ); ?></option>
                                         <option value="daily" <?php selected( 'daily', $this->options['backup_frequency'] ); ?> ><?php _e( 'Daily', $this->text_domain ); ?></option>
                                         <option value="weekly" <?php selected( 'weekly', $this->options['backup_frequency'] ); ?> ><?php _e( 'Weekly', $this->text_domain ); ?></option>
                                         <option value="monthly" <?php selected( 'monthly', $this->options['backup_frequency'] ); ?> ><?php _e( 'Monthly', $this->text_domain ); ?></option>
                                     </select>
-                                    <span class="description"><?php _e( "Select <kbd>never</kbd> if you want to add a cron job to do backups.", $this->text_domain ) ?></span>
+                                    <label id="start_day_label" for="start_day" class="hide-if-js"><?php _e( "starting on", $this->text_domain ); ?>
+                                        <select id="start_day" name="start_day">
+                                            <?php
+                                            for ($day_index = 0; $day_index <= 6; $day_index++)
+                                                echo '<option value="' . esc_attr($day_index) . '">' . $wp_locale->get_weekday($day_index) . '</option>';
+                                            ?>
+                                        </select>
+                                    </label>
+                                    <label id="start_time_label" for="start_hour" class="hide-if-js"><?php _e( "at", $this->text_domain ); ?>
+                                        <input id="start_hour" name="start_hour" type="number" min="0" max="24" step="1" class="small-text code" value="00" />:<input id="start_minute" name="start_minute" type="number" min="0" max="59" step="1" class="small-text code" value="00" />
+                                    </label>
+                                    <div class="description"><?php printf( __( "Select %s if you want to add a cron job to do backups.", $this->text_domain ), "<kbd>" . __( "never", $this->text_domain ) . "</kbd>" ); ?></div>
                                 </td>
                             </tr>
                         </tbody>
@@ -65,15 +77,30 @@ echo $this->get_messages_html();
                     <?php do_meta_boxes( $this->pagehook, 'advanced', '' ); ?>
                 </div>
                 <br class="clear"/>
-            </div>        
+            </div>
         </form>
-    </div>    
+    </div>
 </div>
 <script type="text/javascript">
     //<![CDATA[
     jQuery(document).ready( function($) {
         $('.if-js-closed').removeClass('if-js-closed').addClass('closed');
         postboxes.add_postbox_toggles('<?php echo $this->pagehook; ?>');
+        var val = "";
+        $('#backup_frequency').change(function(){
+            val = $("#backup_frequency option:selected").val();
+            switch(val) {
+                case "never":
+                    $("#start_day_label, #start_time_label").addClass("hide-if-js");
+                    break;
+                case "daily":
+                    $("#start_day_label").addClass("hide-if-js");
+                    $("#start_time_label").removeClass("hide-if-js");
+                    break;
+                default:
+                    $("#start_day_label, #start_time_label").removeClass("hide-if-js");
+            }
+        });
     });
     //]]>
 </script>

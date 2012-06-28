@@ -588,22 +588,17 @@ class Backup {
      */
     function metabox_status_content( $data ) {
         echo '<div class="misc-pub-section">' . __('Current date and time:', $this->text_domain) . '<br/><strong>' .
-            /* translators: date format, see http://php.net/date */
-            date(__("M j, Y \a\\t H:i", $this->text_domain), $this->time) .
+            date_i18n( get_option( 'date_format' ), $this->time ) .
         '</strong></div>' .
         '<div class="misc-pub-section">' . __('Most recent backup:', $this->text_domain) . '<br/><strong>';
             if ( $this->options['last_backup'] )
-                echo
-                    /* translators: date format, see http://php.net/date */
-                    date(__("M j, Y \a\\t H:i", $this->text_domain), $this->options['last_backup']);
+                echo date_i18n( get_option( 'date_format' ), $this->options['last_backup'] );
             else
                 _e('never', $this->text_domain);
         echo '</strong></div>' .
         '<div class="misc-pub-section">' . __('Next scheduled backup:', $this->text_domain) . '<br/><strong>';
             if ( $next = wp_next_scheduled('backup_schedule'))
-                echo
-                    /* translators: date format, see http://php.net/date */
-                    date(__("M j, Y \a\\t H:i", $this->text_domain), $next);
+                echo date_i18n( get_option( 'date_format' ), $next );
             else
                 _e('never', $this->text_domain);
         echo '</strong></div>';
@@ -844,7 +839,10 @@ class Backup {
 
                 // Schedule backup if frequency is something else than never.
                 if ( $_POST['backup_frequency'] != 'never' ) {
-                    wp_schedule_event($this->time, $_POST['backup_frequency'], 'backup_schedule');
+                    // This should not be translated!
+                    $weekday = array( 'Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday' );
+                    $time = strtotime( "this " . $weekday[intval( $_POST['start_day'] )] . " at " . intval( $_POST['start_hour'] ) . ":" . intval( $_POST['start_minute'] ), $this->time );
+                    wp_schedule_event($time, $_POST['backup_frequency'], 'backup_schedule');
                 }
 
                 $this->options['backup_frequency'] = $_POST['backup_frequency'];
