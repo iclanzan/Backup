@@ -581,7 +581,7 @@ class Backup {
             printf(__('%s of %s used', $this->text_domain), size_format($this->options['quota_used']), size_format($this->options['quota_total'] ));
             echo '</strong></div>';
         }
-        // echo '<div class="misc-pub-section misc-pub-section-last">' . __('Manual backup URL:', $this->text_domain) . '<br/><kbd>' . home_url('?backup') . '</kbd></div><div class="clear"></div>';
+        echo '<div class="misc-pub-section misc-pub-section-last">' . __('Manual backup URL:', $this->text_domain) . '<br/><kbd>' . home_url('?backup') . '</kbd></div><div class="clear"></div>';
     }
     /**
      * Actions meta box.
