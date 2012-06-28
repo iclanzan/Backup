@@ -419,7 +419,7 @@ class Backup {
         if ( $file != plugin_basename(__FILE__))
             return $links;
 
-        $settings_link = sprintf( '<a href="options-general.php?page=backup">%s</a>', __( 'Settings', $this->text_domain ) );;
+        $settings_link = sprintf( '<a href="options-general.php?page=backup">%s</a>', __( 'Settings', $this->text_domain ) );
 
         array_unshift($links, $settings_link);
 
