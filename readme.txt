@@ -3,8 +3,8 @@ Contributors: hel.io
 Donate link: http://hel.io/donate/
 Tags: backup, back up, Google Drive, Drive backup, WordPress backup
 Requires at least: 3.4
-Tested up to: 3.4
-Stable tag: 2.0.1
+Tested up to: 3.4.1
+Stable tag: 2.1
 License: GPLv3
 License URI: http://www.gnu.org/licenses/gpl.html
 
@@ -45,6 +45,9 @@ Apart from not being able to purge backups from Google Drive, Backup should work
 1. Screenshot of the Backup settings page.
 
 == Changelog ==
+
+= 2.1 =
+* Added Russian localization
 
 = 2.0.1 =
 * Fixed database dump not getting added to the backup archive in some circumstances.
