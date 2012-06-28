@@ -53,6 +53,7 @@ Apart from not being able to purge backups from Google Drive, Backup should work
 * Added option to disable specific HTTP transports.
 * Added option to disable SSL verification against a certificate.
 * Added Russian localization
+* The plugin now properly handles updates. This means you won't have to reactivate the plugin after each update.
 
 = 2.0.1 =
 * Fixed database dump not getting added to the backup archive in some circumstances.

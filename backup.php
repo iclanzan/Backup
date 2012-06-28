@@ -54,6 +54,14 @@ require_once('functions.php');
 class Backup {
 
     /**
+     * Stores the plugin version.
+     *
+     * @var string
+     * @access private
+     */
+    private $version;
+
+    /**
      * Stores the plugin base filesystem directory
      *
      * @var string
@@ -208,6 +216,7 @@ class Backup {
     private $http_transports;
 
     function __construct() {
+        $this->version = '2.1';
         $this->time = current_time('timestamp');
         $this->plugin_dir = dirname(plugin_basename(__FILE__));
         $this->text_domain = 'backup';
@@ -240,6 +249,7 @@ class Backup {
         // Get options if they exist, else set default
         if ( ! $this->options = get_option('backup_options') ) {
             $this->options = array(
+                'plugin_version'      => $this->version,
                 'refresh_token'       => '',
                 'local_folder'        => relative_path(ABSPATH, $this->local_folder),
                 'drive_folder'        => '',
@@ -263,6 +273,9 @@ class Backup {
                 'ssl_verify'          => true
             );
         }
+        else
+            if ( !isset( $this->options['plugin_version'] ) || $this->version != $this->options['plugin_version'] )
+                $this->upgrade();
 
         $this->local_folder = absolute_path($this->options['local_folder'], ABSPATH);
         $this->dump_file = $this->local_folder . '/dump.sql';
@@ -426,6 +439,18 @@ class Backup {
     }
 
     /**
+     * This function handles upgrading the plugin to a new version.
+     * It gets triggered when the plugin version is different than the one stored in the database.
+     */
+    protected function upgrade() {
+        $this->options['include_list']        = array();
+        $this->options['request_timeout']     = 5;
+        $this->options['disabled_transports'] = array();
+        $this->options['ssl_verify']          = true;
+        $this->options['plugin_version']      = $this->version;
+    }
+
+    /**
      * Filter - Add custom schedule intervals.
      *
      * @param  array $schedules The array of defined intervals.
@@ -535,7 +560,7 @@ class Backup {
                          '<p><strong>' . __('Time limit', $this->text_domain) . '</strong> - ' . __('If possible this will be set as the time limit for uploading a file to Google Drive. Just before reaching this limit, the upload stops and an upload resume is scheduled.', $this->text_domain) . '</p>' .
                          '<h3>' . __('HTTP options', $this->text_domain) . '</h3>' .
                          '<p><strong>' . __('Request timeout', $this->text_domain) . '</strong> - ' . __('Set this to the number of seconds the HTTP transport should wait for a response before timing out.', $this->text_domain) . '</p>' .
-                         '<p><strong>' . __('SSL verification', $this->text_domain) . '</strong> - ' . __('Although not recommended, this option allows you to disable the host\'s SSL certificate verification.', $this->text_domain) . '</p>'
+                         '<p><strong>' . __('SSL verification', $this->text_domain) . '</strong> - ' . __('Although not recommended, this option allows you to disable the host\'s SSL certificate verification.', $this->text_domain) . '</p>' .
                          '<p><strong>' . __('Disabled transports', $this->text_domain) . '</strong> - ' . __('If having trouble with HTTP requests, disabling one or more of the transports might help. At least one transport must remain enabled.', $this->text_domain) . '</p>'
         ) );
 
