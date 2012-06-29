@@ -214,7 +214,7 @@ class Backup {
             'https://docs.googleusercontent.com/',
             'https://spreadsheets.google.com/feeds/'
         );
-        
+
         $this->schedules = array(
             'weekly' => array(
                 'interval' => 604800,
@@ -271,7 +271,7 @@ class Backup {
 
         // Add custom cron intervals
         add_filter('cron_schedules', array(&$this, 'cron_add_intervals'));
-        
+
         // Set the screen layout to use 2 columns
         add_filter('screen_layout_columns', array(&$this, 'on_screen_layout_columns'), 10, 2);
 
@@ -300,8 +300,11 @@ class Backup {
 
     /**
      * This is run when you activate the plugin, checking for compatibility, adding the default options to the database.
+     *
+     * @global string $wp_version Used to check against the required WordPress version.
      */ 
     public function activate() {
+        global $wp_version;
         // Check for compatibility
         try {
             // check OpenSSL
@@ -313,9 +316,14 @@ class Backup {
             if(!class_exists('SimpleXMLElement')) {
                 throw new Exception(__('Please enable SimpleXMLElement in PHP. Backup could not be activated.', $this->text_domain));
             }
+
+            // check Wordpress version
+            if(version_compare($wp_version, '3.0', '<')) {
+              throw new Exception(__('Backup requires WordPress 3.0 or higher!', $this->text_domain));
+            }
         }
         catch(Exception $e) {
-            deactivate_plugins($plugin_dir . '/backup.php', true);
+            deactivate_plugins($this->plugin_dir . '/backup.php', true);
             echo '<div id="message" class="error">' . $e->getMessage() . '</div>';
             trigger_error('Could not activate Backup.', E_USER_ERROR);
             return;
