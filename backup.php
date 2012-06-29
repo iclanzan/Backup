@@ -315,7 +315,7 @@ class Backup {
             }
         }
         catch(Exception $e) {
-            deactivate_plugins($plugin_dir . '/backup.php', true);
+            deactivate_plugins($this->plugin_dir . '/backup.php', true);
             echo '<div id="message" class="error">' . $e->getMessage() . '</div>';
             trigger_error('Could not activate Backup.', E_USER_ERROR);
             return;
