@@ -227,6 +227,8 @@ class Backup {
 
         $this->scope = array(
             'https://www.googleapis.com/auth/drive.file',
+            'https://www.googleapis.com/auth/userinfo.profile',
+            'https://www.googleapis.com/auth/userinfo.email',
             'https://docs.google.com/feeds/',
             'https://docs.googleusercontent.com/',
             'https://spreadsheets.google.com/feeds/'
@@ -269,8 +271,9 @@ class Backup {
                 'chunk_size'          => 0.5, // MiB
                 'time_limit'          => 120, // seconds
                 'request_timeout'     => 5, // seconds
-                'enabled_transports' => $this->http_transports,
-                'ssl_verify'          => true
+                'enabled_transports'  => $this->http_transports,
+                'ssl_verify'          => true,
+                'user_info'           => array()
             );
         }
         else
@@ -335,7 +338,6 @@ class Backup {
      *
      * @global string $wp_version Used to check against the required WordPress version.
      */
-
     public function activate() {
         global $wp_version;
         // Check for compatibility
@@ -449,6 +451,7 @@ class Backup {
         $this->options['enabled_transports']  = $this->http_transports;
         $this->options['ssl_verify']          = true;
         $this->options['plugin_version']      = $this->version;
+        $this->options['user_info']           = array();
         update_option( 'backup_options', $this->options );
     }
 
@@ -605,6 +608,14 @@ class Backup {
             </p>
         </form>
         <?php } else { ?>
+        <?php if ( !empty( $this->options['user_info'] ) ) { ?>
+            <div id="dashboard_right_now" class="column-username">
+                <img src="<?php echo $this->options['user_info']['picture']; ?>" width="50" heigth="50" />
+                <strong><?php echo $this->options['user_info']['name']; ?></strong><br />
+                <?php echo $this->options['user_info']['email']; ?><br />
+                <span class="approved"><?php _e( "Authorized", $this->text_domain ); ?></span>
+            </div>
+        <?php } ?>
         <p><?php _e('Authorization to use Google Drive has been granted. You can revoke it at any time by clicking the button below.', $this->text_domain); ?></p>
         <p><a href="<?php echo $this->redirect_uri; ?>&state=revoke" class="button-secondary"><?php _e('Revoke authorization', $this->text_domain); ?></a></p><?php
         }
@@ -995,7 +1006,7 @@ class Backup {
                 exit;
             }
             $this->log('NOTICE', 'Attempting to upload archive to Google Drive.');
-            if ( is_wp_error( $e = $this->gdocs->prepare_upload( $file_path, $file_name, $this->options['drive_folder'] ) ) {
+            if ( is_wp_error( $e = $this->gdocs->prepare_upload( $file_path, $file_name, $this->options['drive_folder'] ) ) ) {
                 $this->log_wp_error($e);
                 delete_path( $file_path );
                 exit;
@@ -1188,6 +1199,8 @@ class Backup {
                     // Authorization was successful, so create an instance of GDocs and update quota.
                     $this->gdocs = new GDocs($this->goauth->get_access_token());
                     $result = $this->update_quota();
+                    // Request and set user_info
+                    $this->set_user_info();
                     update_option('backup_options', $this->options);
                 }
             }
@@ -1218,6 +1231,19 @@ class Backup {
                 exit;
             }
         }
+    }
+
+    function set_user_info() {
+        if ( is_wp_error( $result = wp_remote_get( 'https://www.googleapis.com/oauth2/v1/userinfo?access_token=' . $this->goauth->get_access_token() ) ) )
+            return;
+        if ( '200' != $result['response']['code'] )
+            return;
+        $result = json_decode( $result['body'], true );
+        $this->options['user_info'] = array(
+            'email'   => $result['email'],
+            'name'    => $result['name'],
+            'picture' => $result['picture']
+        );
     }
 
     /**

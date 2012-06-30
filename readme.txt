@@ -47,8 +47,11 @@ Apart from not being able to purge backups from Google Drive, Backup should work
 == Changelog ==
 
 = 2.1 =
-* Added field to specify what paths to include in the backup.
+* Added field to enter specific paths to include in the backup.
 * Added ability to specify the day of the week and and the time when to schedule the first backup.
+* Outputting progress when doing manual backup.
+* Now generating separate log files for each backup.
+* Displaying user information for the currently authorized account. This is useful in case of multiple Google accounts when the user doesn't remember which account was authorized.
 * Added option to change the request timeout value.
 * Added option to disable specific HTTP transports.
 * Added option to disable SSL verification against a certificate.
