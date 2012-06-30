@@ -51,6 +51,7 @@ Apart from not being able to purge backups from Google Drive, Backup should work
 * Added ability to specify the day of the week and and the time when to schedule the first backup.
 * Outputting progress when doing manual backup.
 * Now generating separate log files for each backup.
+* Added a unique token to the manual backup URI so that backups can't be deployed by anyone.
 * Displaying user information for the currently authorized account. This is useful in case of multiple Google accounts when the user doesn't remember which account was authorized.
 * Added option to change the request timeout value.
 * Added option to disable specific HTTP transports.
