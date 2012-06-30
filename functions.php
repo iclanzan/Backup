@@ -140,23 +140,23 @@ function _zip_create_ziparchive( $sources, $destination, $exclude = array() ) {
     if ( $res = $zip->open( $destination, ZIPARCHIVE::CREATE ) != true )
         return new WP_Error( 'ziparchive', $res );
 
-    foreach ( $sources as $source )
-        if ( @is_readable($source) )
-            if ( @is_dir($source) ) {
-                $files = directory_list($source, true, $exclude);
-                foreach ( $files as $file )
-                    if ( @is_dir($file) && @is_readable($file) )
-                        $zip->addEmptyDir(str_replace(parent_dir($source) . '/', '', $file . '/'));
-                    elseif ( @is_file($file) && @is_readable($file) )
-                        $zip->addFile($file, str_replace(parent_dir($source) . '/', '', $file));
-            }
-            elseif ( @is_file($source) )
-                $zip->addFile($source, basename($source));
+    foreach ( $sources as $source ) if ( @is_readable($source) )
+        if ( @is_dir($source) ) {
+            if( is_wp_error( $files = directory_list($source, true, $exclude) ) )
+                return $files;
+            foreach ( $files as $file ) if ( @is_readable($file) )
+                if ( @is_dir($file) )
+                    $zip->addEmptyDir(str_replace(parent_dir($source) . '/', '', $file . '/'));
+                elseif ( @is_file($file) )
+                    $zip->addFile($file, str_replace(parent_dir($source) . '/', '', $file));
+        }
+        elseif ( @is_file($source) )
+            $zip->addFile($source, basename($source));
 
     $zip_result = $zip->close();
 
     if ( ! $zip_result )
-        return new WP_Error( 'zip', "Could not properly close archive '" . $destination . "'." );
+        return new WP_Error( 'zip_close_error', "Could not properly close archive '" . $destination . "'." );
     return true;
 }
 endif;
@@ -175,19 +175,17 @@ if ( !function_exists('_zip_create_pclzip') ) :
 function _zip_create_pclzip( $sources, $destination, $exclude = array() ) {
     require_once(ABSPATH . 'wp-admin/includes/class-pclzip.php');
     $zip = new PclZip($destination);
-    foreach ( $sources as $source )
-        if ( @is_readable($source) )
-            if ( @is_dir($source) ) {
-                $files = directory_list($source, true, $exclude);
-                $res = $zip->add($files, PCLZIP_OPT_REMOVE_PATH, parent_dir($source));
-                if ( 0 == $res )
-                    return new WP_Error('pclzip', $zip->errorInfo(true));
-            }
-            elseif ( @is_file($source) ) {
-                $res = $zip->add($source, PCLZIP_OPT_REMOVE_PATH, parent_dir($source));
-                if ( 0 == $res )
-                    return new WP_Error('pclzip', $zip->errorInfo(true));
-            }
+    foreach ( $sources as $source ) if ( @is_readable($source) )
+        if ( @is_dir($source) ) {
+            if ( is_wp_error( $files = directory_list($source, true, $exclude) ) )
+                return $files;
+            if( 0 == $zip->add( $files, PCLZIP_OPT_REMOVE_PATH, parent_dir($source) ) )
+                return new WP_Error('pclzip', $zip->errorInfo(true));
+        }
+        elseif ( @is_file($source) ) {
+            if( 0 == $zip->add( $source, PCLZIP_OPT_REMOVE_PATH, parent_dir($source) ) );
+                return new WP_Error('pclzip', $zip->errorInfo(true));
+        }
     return true;
 }
 endif;
@@ -224,33 +222,31 @@ function directory_list($base_path, $recursive = true, $exclude = array()) {
         return new WP_Error( 'empty_argument', "The directory path argument cannot be empty." );
     if ( !@is_dir( $base_path ) )
         return new WP_Error( 'invalid_argument', $base_path . " is not a directory." );
+    if (!$folder_handle = @opendir($base_path))
+        return new WP_Error( 'opendir_error', "Could not open directory at: '" . $base_path . "'." );
 
     $result_list = array();
 
-    if (!$folder_handle = @opendir($base_path)) {
-        return new WP_Error( 'opendir_error', "Could not open directory at: '" . $base_path . "'." );
-    }
-    else {
-        while ( false !== ( $filename = readdir( $folder_handle ) ) ) {
-            if ( !in_array( $filename, array( ".", ".." )) && !in_array( $filename, $exclude ) && !in_array( $base_path . $filename, $exclude ) ) {
-                if ( @is_dir( $base_path . $filename . "/" ) ) {
-                    $result_list[] = $base_path . $filename;
-                    if( $recursive ) {
-                        $temp_list = directory_list( $base_path . $filename . "/", $recursive, $exclude);
-                        if ( is_wp_error( $temp_list ) )
-                            return $temp_list;
-                        if ( ! empty( $temp_list ) )
-                            $result_list = array_merge( $result_list, $temp_list );
-                    }
-                } else {
-                    $result_list[] = $base_path . $filename;
+    while ( false !== ( $filename = @readdir( $folder_handle ) ) ) {
+        if ( !in_array( $filename, array( ".", ".." )) && !in_array( $filename, $exclude ) && !in_array( $base_path . $filename, $exclude ) ) {
+            if ( @is_dir( $base_path . $filename . "/" ) ) {
+                $result_list[] = $base_path . $filename;
+                if( $recursive ) {
+                    $temp_list = directory_list( $base_path . $filename . "/", $recursive, $exclude);
+                    if ( is_wp_error( $temp_list ) )
+                        return $temp_list;
+                    if ( ! empty( $temp_list ) )
+                        $result_list = array_merge( $result_list, $temp_list );
                 }
+            } else {
+                $result_list[] = $base_path . $filename;
             }
         }
-        @closedir($folder_handle);
-
-        return $result_list;
     }
+    @closedir($folder_handle);
+
+    return $result_list;
+
 }
 endif;
 
