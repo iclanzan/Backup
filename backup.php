@@ -252,7 +252,7 @@ class Backup {
         if ( ! $this->options = get_option('backup_options') ) {
             $this->options = array(
                 'plugin_version'      => $this->version,
-                'backup_token'        => wp_generate_password( 12, false ),
+                'backup_token'        => '',
                 'refresh_token'       => '',
                 'local_folder'        => relative_path(ABSPATH, $this->local_folder),
                 'drive_folder'        => '',
@@ -278,8 +278,8 @@ class Backup {
             );
         }
         else
-            if ( !isset( $this->options['plugin_version'] ) || $this->version != $this->options['plugin_version'] )
-                $this->upgrade();
+            if ( !isset( $this->options['plugin_version'] ) || $this->version > $this->options['plugin_version'] )
+                add_action('init', array(&$this, 'upgrade'));
 
         $this->local_folder = absolute_path($this->options['local_folder'], ABSPATH);
         $this->dump_file = $this->local_folder . '/dump.sql';
@@ -365,6 +365,9 @@ class Backup {
             return;
         }
 
+        // Set the backup token here, because in the constructor 'wp_generate_password()' is not defined.
+        $this->options['backup_token'] = wp_generate_password( 12, false );
+
         // Add the default options to the database, without letting WP autoload them
         add_option('backup_options', $this->options, '', 'no');
 
@@ -446,8 +449,8 @@ class Backup {
      * This function handles upgrading the plugin to a new version.
      * It gets triggered when the plugin version is different than the one stored in the database.
      */
-    protected function upgrade() {
-        if ( !isset( $this->options['plugin_version'] ) ) {
+    function upgrade() {
+        if ( !isset( $this->options['plugin_version'] ) || $this->options['plugin_version'] < $this->version ) {
             $this->options['backup_token']        = wp_generate_password( 12, false );
             $this->options['include_list']        = array();
             $this->options['request_timeout']     = 5;
