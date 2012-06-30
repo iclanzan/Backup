@@ -137,7 +137,7 @@ if ( !function_exists('_zip_create_ziparchive') ) :
  */
 function _zip_create_ziparchive( $sources, $destination, $exclude = array() ) {
     $zip = new ZipArchive();
-    if ( $res = $zip->open( $destination, ZIPARCHIVE::CREATE ) != true )
+    if ( true !== $res = $zip->open( $destination, ZIPARCHIVE::CREATE ) )
         return new WP_Error( 'ziparchive', $res );
 
     foreach ( $sources as $source ) if ( @is_readable($source) )
