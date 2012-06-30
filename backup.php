@@ -252,6 +252,7 @@ class Backup {
         if ( ! $this->options = get_option('backup_options') ) {
             $this->options = array(
                 'plugin_version'      => $this->version,
+                'backup_token'        => wp_generate_password( 12, false ),
                 'refresh_token'       => '',
                 'local_folder'        => relative_path(ABSPATH, $this->local_folder),
                 'drive_folder'        => '',
@@ -446,12 +447,15 @@ class Backup {
      * It gets triggered when the plugin version is different than the one stored in the database.
      */
     protected function upgrade() {
-        $this->options['include_list']        = array();
-        $this->options['request_timeout']     = 5;
-        $this->options['enabled_transports']  = $this->http_transports;
-        $this->options['ssl_verify']          = true;
-        $this->options['plugin_version']      = $this->version;
-        $this->options['user_info']           = array();
+        if ( !isset( $this->options['plugin_version'] ) ) {
+            $this->options['backup_token']        = wp_generate_password( 12, false );
+            $this->options['include_list']        = array();
+            $this->options['request_timeout']     = 5;
+            $this->options['enabled_transports']  = $this->http_transports;
+            $this->options['ssl_verify']          = true;
+            $this->options['plugin_version']      = $this->version;
+            $this->options['user_info']           = array();
+        }
         update_option( 'backup_options', $this->options );
     }
 
@@ -646,7 +650,7 @@ class Backup {
             printf(__('%s of %s used', $this->text_domain), size_format($this->options['quota_used']), size_format($this->options['quota_total'] ));
             echo '</strong></div>';
         }
-        echo '<div class="misc-pub-section misc-pub-section-last">' . __('Manual backup URL:', $this->text_domain) . '<br/><kbd>' . home_url('?backup') . '</kbd></div><div class="clear"></div>';
+        echo '<div class="misc-pub-section misc-pub-section-last">' . __('Manual backup URL:', $this->text_domain) . '<br/><kbd>' . home_url( '?backup=' . $this->options['backup_token'] ) . '</kbd></div><div class="clear"></div>';
     }
 
     /**
@@ -901,7 +905,7 @@ class Backup {
      * It hooks to 'template_redirect'.
      */
     function manual_backup() {
-        if ( isset($_GET['backup']) ) {
+        if ( isset($_GET['backup']) && $this->options['backup_token'] == $_GET['backup'] ) {
             echo '<!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Backup Process</title><link rel="stylesheet" id="install-css"  href="http://songpane.com/wp-admin/css/install.css" type="text/css" media="all" /></head><body><style>p{font-family:monospace;border-radius:3px;padding:3px;margin:6px 0}.warning{background:#ffec8b;border:1px solid #fc0}.error{background:#ffa0a0;border:1px solid #f04040}#progress{width:400px;height:30px;margin:5px auto;border:1px solid #dfdfdf;background:#f9f9f9;padding:1px;overflow:hidden}span{background:#fc0;display:inline-block;height:30px}</style><h1 id="logo">Backup Process</h1>';
             if ( isset( $_GET['resume'] ) )
