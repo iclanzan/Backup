@@ -26,7 +26,7 @@ Domain Path: /languages
     GNU General Public License for more details.
 
     You should have received a copy of the GNU General Public License
-    along with Foobar.  If not, see http://www.gnu.org/licenses/gpl.html.
+    along with Backup. If not, see http://www.gnu.org/licenses/gpl.html.
 */
 
 // Only load the plugin if needed.
@@ -779,10 +779,8 @@ class Backup {
 
             // If we have sources that we haven't defined stop function execution.
             if ( isset($_POST['sources']) ) {
-                $array_keys = array_keys($this->sources);
-                foreach ( $_POST['sources'] as $source )
-                    if ( !in_array($source, $array_keys) )
-                        wp_die(__('You were caught trying to do an illegal operation.', $this->text_domain), __('Illegal operation', $this->text_domain));
+              if ( array_diff( $_POST['sources'], array_keys( $this->sources ) ) )
+                wp_die(__('You were caught trying to do an illegal operation.', $this->text_domain), __('Illegal operation', $this->text_domain));
                 $this->options['source_list'] = $_POST['sources'];
             }
 
