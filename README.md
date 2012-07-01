@@ -3,6 +3,7 @@
 [Backup] (http://hel.io/wordpress/backup/) is a Wordpress plugin that makes backups of your Wordpress site locally or to
 Google Drive.
 
+
 ## Description
 
 Version 2.1 is out and it's full of improvements and new features!
@@ -30,14 +31,26 @@ If you need support configuring the plugin click on the `help` button on the top
 
 ## Contributors
 
-- [Sorin Iclanzan] (http://hel.io/) - Code, Idea, Design
-- [Sergey Yakovlev] (http://klays.ru) - Localization into Russian, Code
+- [Sorin Iclanzan] (https://github.com/iclanzan) - Code, Idea, Design
+- [Sergey Yakovlev] (https://github.com/sergeyklay) - Localization into Russian, Code
 
 
 ## Changelog
 
-**2.1.0**
+== Changelog ==
+
+**2.1**
+- Added field to enter specific paths to include in the backup.
+- Added ability to specify the day of the week and and the time when to schedule the first backup.
+- Outputting progress when doing manual backup.
+- Now generating separate log files for each backup.
+- Added a unique token to the manual backup URI so that backups can't be deployed by anyone.
+- Displaying user information for the currently authorized account. This is useful in case of multiple Google accounts when the user doesn't remember which account was authorized.
+- Added option to change the request timeout value.
+- Added option to disable specific HTTP transports.
+- Added option to disable SSL verification against a certificate.
 - Added Russian localization
+- The plugin now properly handles updates. This means you won't have to reactivate the plugin after each update.
 - Other minor bug fixes.
 
 **2.0.1**
@@ -48,13 +61,11 @@ If you need support configuring the plugin click on the `help` button on the top
 - Now logging upload speeds.
 - Other minor bug fixes.
 
-**2.0.0**
-- Rewrote 95% of the plugin to make it more compatible with older PHP versions, more portable and cleaner. It now uses
-  classes and functions already found in WordPress where possible.
+**2.0**
+- Rewrote 95% of the plugin to make it more compatible with older PHP versions, more portable and cleaner. It now uses classes and functions already found in WordPress where possible.
 - Interrupted backup uploads to Google Drive will resume automatically on the next WordPress load.
 - Added internationalization support. If anyone wishes to translate the plugin feel free to do so.
-- Revamped the settings page. You can now choose between one and two column layout. Added meta boxes that can be hidden,
-  shown or closed individually as well as moved between columns.
+- Revamped the settings page. You can now choose between one and two column layout. Added meta boxes that can be hidden, shown or closed individually as well as moved between columns.
 - Added contextual help on the settings page.
 - Added ability to select which WordPress directories to backup.
 - Added ability to exclude specific files or directories from being backed up.
@@ -76,22 +87,19 @@ If you need support configuring the plugin click on the `help` button on the top
 
 **1.1.2**
 - Added the ability to store a different number of backups locally then on Google Drive.
-- On deactivation the plugin deletes all traces of itself (backups stored locally, options) and revokes access to the
-  Google Account.
+- On deactivation the plugin deletes all traces of itself (backups stored locally, options) and revokes access to the Google Account.
 - Fixed some more frequency issues.
 
 **1.1.1**
 - Fixed monthly backup frequency.
 
-**1.1.0**
-- Added ability to backup database. Database dumps are saved to a `sql` file in the `wp-content` folder and added to the
-  backup archive.
+**1.1**
+- Added ability to backup database. Database dumps are saved to a `sql` file in the `wp-content` folder and added to the backup archive.
 - Added a page ( `/backup/` ) which can be used to trigger manual backups or used in cron jobs.
 - Added ability to store a maximum of `n` backups.
-- Displaying dates and times of last performed backups and next scheduled backups on the settings page as well as a link
-  to download the most recent backup and the URL for doing manual backups (and cron jobs).
+- Displaying dates and times of last performed backups and next scheduled backups on the settings page as well as a link to download the most recent backup and the URL for doing manual backups (and cron jobs).
 - Created a separate log file to log every action and error specific to the plugin.
 - Cleaned the code up a bit and added DocBlock.
 
-**1.0.0**
+**1.0**
 - Initial release.
