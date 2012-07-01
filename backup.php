@@ -779,10 +779,8 @@ class Backup {
 
             // If we have sources that we haven't defined stop function execution.
             if ( isset($_POST['sources']) ) {
-                $array_keys = array_keys($this->sources);
-                foreach ( $_POST['sources'] as $source )
-                    if ( !in_array($source, $array_keys) )
-                        wp_die(__('You were caught trying to do an illegal operation.', $this->text_domain), __('Illegal operation', $this->text_domain));
+              if ( array_diff( $_POST['sources'], array_keys( $this->sources ) ) )
+                wp_die(__('You were caught trying to do an illegal operation.', $this->text_domain), __('Illegal operation', $this->text_domain));
                 $this->options['source_list'] = $_POST['sources'];
             }
 
