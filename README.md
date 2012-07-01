@@ -37,8 +37,6 @@ If you need support configuring the plugin click on the `help` button on the top
 
 ## Changelog
 
-== Changelog ==
-
 **2.1**
 - Added field to enter specific paths to include in the backup.
 - Added ability to specify the day of the week and and the time when to schedule the first backup.
