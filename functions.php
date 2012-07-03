@@ -33,71 +33,68 @@ function db_dump( $dump_file ) {
 
     if ( ! $handle )
         return new WP_Error( 'db_dump', 'Could not open ' . $dump_file . ' for writing.' );
-    else {
 
-        fwrite( $handle, "/**\n" );
-        fwrite( $handle, " * SQL Dump created with Backup for WordPress\n" );
-        fwrite( $handle, " *\n" );
-        fwrite( $handle, " * http://hel.io/wordpress/backup\n" );
-        fwrite( $handle, " */\n\n" );
+    fwrite( $handle, "/**\n" );
+    fwrite( $handle, " * SQL Dump created with Backup for WordPress\n" );
+    fwrite( $handle, " *\n" );
+    fwrite( $handle, " * http://hel.io/wordpress/backup\n" );
+    fwrite( $handle, " */\n\n" );
 
-        fwrite( $handle, "/*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;\n" );
-        fwrite( $handle, "/*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;\n" );
-        fwrite( $handle, "/*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;\n" );
-        fwrite( $handle, "/*!40101 SET NAMES " . DB_CHARSET . " */;\n" );
-        fwrite( $handle, "/*!40014 SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0 */;\n" );
-        fwrite( $handle, "/*!40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO' */;\n" );
-        fwrite( $handle, "/*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;\n\n" );
+    fwrite( $handle, "/*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;\n" );
+    fwrite( $handle, "/*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;\n" );
+    fwrite( $handle, "/*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;\n" );
+    fwrite( $handle, "/*!40101 SET NAMES " . DB_CHARSET . " */;\n" );
+    fwrite( $handle, "/*!40014 SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0 */;\n" );
+    fwrite( $handle, "/*!40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO' */;\n" );
+    fwrite( $handle, "/*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;\n\n" );
 
+    $tables = $wpdb->get_results( "SHOW TABLES", ARRAY_A );
 
-        $tables = $wpdb->get_results( "SHOW TABLES", ARRAY_A );
+    if ( empty( $tables ) )
+        return new WP_Error( 'db_dump', "There are no tables in the database." );
 
-        if ( empty( $tables ) )
-            return new WP_Error( 'db_dump', "There are no tables in the database." );
-        else {
-            foreach ( $tables as $table_array ) {
-                $table = array_shift( array_values( $table_array ) );
-                $create = $wpdb->get_var( "SHOW CREATE TABLE " . $table, 1 );
+    foreach ( $tables as $table_array ) {
+        $table = array_shift( array_values( $table_array ) );
+        $create = $wpdb->get_var( "SHOW CREATE TABLE " . $table, 1 );
 
-                fwrite( $handle, "/* Dump of table `" . $table . "`\n" );
-                fwrite( $handle, " * ------------------------------------------------------------*/\n\n" );
+        fwrite( $handle, "/* Dump of table `" . $table . "`\n" );
+        fwrite( $handle, " * ------------------------------------------------------------*/\n\n" );
 
-                fwrite( $handle, "DROP TABLE IF EXISTS `" . $table . "`;\n\n" . $create . ";\n\n" );
+        fwrite( $handle, "DROP TABLE IF EXISTS `" . $table . "`;\n\n" . $create . ";\n\n" );
 
-                $data = $wpdb->get_results("SELECT * FROM `" . $table . "`", ARRAY_A );
+        $data = $wpdb->get_results("SELECT * FROM `" . $table . "`", ARRAY_A );
 
-                if ( ! empty( $data ) ) {
-                    fwrite( $handle, "LOCK TABLES `" . $table . "` WRITE;\n" );
-                    if ( false !== strpos( $create, 'MyISAM' ) )
-                        fwrite( $handle, "/*!40000 ALTER TABLE `".$table."` DISABLE KEYS */;\n\n" );
-                    foreach ( $data as $entry ) {
-                        foreach ( $entry as $key => $value ) {
-                            if ( NULL === $value )
-                                $entry[$key] = "NULL";
-                            elseif ( "" === $value || false === $value )
-                                $entry[$key] = "''";
-                            elseif ( !is_numeric( $value ) )
-                                $entry[$key] = "'" . mysql_real_escape_string($value) . "'";
-                        }
-                        fwrite( $handle, "INSERT INTO `" . $table . "` ( " . implode( ", ", array_keys( $entry ) ) . " ) VALUES ( " . implode( ", ", $entry ) . " );\n" );
-                    }
-                    if ( false !== strpos( $create, 'MyISAM' ) )
-                        fwrite( $handle, "\n/*!40000 ALTER TABLE `".$table."` ENABLE KEYS */;" );
-                    fwrite( $handle, "\nUNLOCK TABLES;\n\n" );
+        if ( ! empty( $data ) ) {
+            fwrite( $handle, "LOCK TABLES `" . $table . "` WRITE;\n" );
+            if ( false !== strpos( $create, 'MyISAM' ) )
+                fwrite( $handle, "/*!40000 ALTER TABLE `".$table."` DISABLE KEYS */;\n\n" );
+            foreach ( $data as $entry ) {
+                foreach ( $entry as $key => $value ) {
+                    if ( NULL === $value )
+                        $entry[$key] = "NULL";
+                    elseif ( "" === $value || false === $value )
+                        $entry[$key] = "''";
+                    elseif ( !is_numeric( $value ) )
+                        $entry[$key] = "'" . mysql_real_escape_string($value) . "'";
                 }
+                fwrite( $handle, "INSERT INTO `" . $table . "` ( " . implode( ", ", array_keys( $entry ) ) . " ) VALUES ( " . implode( ", ", $entry ) . " );\n" );
             }
+            if ( false !== strpos( $create, 'MyISAM' ) )
+                fwrite( $handle, "\n/*!40000 ALTER TABLE `".$table."` ENABLE KEYS */;" );
+            fwrite( $handle, "\nUNLOCK TABLES;\n\n" );
         }
-
-        fwrite( $handle, "/*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;\n" );
-        fwrite( $handle, "/*!40101 SET SQL_MODE=@OLD_SQL_MODE */;\n" );
-        fwrite( $handle, "/*!40014 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS */;\n" );
-        fwrite( $handle, "/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;\n" );
-        fwrite( $handle, "/*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;\n" );
-        fwrite( $handle, "/*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;\n" );
-
-        fclose( $handle );
-        return ( microtime( true ) - $timer_start );
     }
+
+
+    fwrite( $handle, "/*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;\n" );
+    fwrite( $handle, "/*!40101 SET SQL_MODE=@OLD_SQL_MODE */;\n" );
+    fwrite( $handle, "/*!40014 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS */;\n" );
+    fwrite( $handle, "/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;\n" );
+    fwrite( $handle, "/*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;\n" );
+    fwrite( $handle, "/*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;\n" );
+
+    fclose( $handle );
+    return ( microtime( true ) - $timer_start );
 }
 endif;
 
@@ -114,13 +111,17 @@ if ( !function_exists('zip') ) :
  */
 function zip( $sources, $destination, $exclude = array() ) {
     $timer_start = microtime( true );
-    if ( class_exists('ZipArchive') )
-        $zip = _zip_create_ziparchive($sources, $destination, $exclude);
+    if ( class_exists( 'ZipArchive' ) )
+        $c = _zip_create_ziparchive( $sources, $destination, $exclude );
     else
-        $zip = _zip_create_pclzip($sources, $destination, $exclude);
-    if ( is_wp_error($zip) )
-        return $zip;
-    return ( microtime( true ) - $timer_start );
+        $c = _zip_create_pclzip( $sources, $destination, $exclude );
+    if ( is_wp_error( $c ) )
+        return $c;
+    $zip = array(
+        'count' => $c,
+        'time'  => microtime( true ) - $timer_start
+    );
+    return $zip;
 }
 endif;
 
@@ -137,27 +138,32 @@ if ( !function_exists('_zip_create_ziparchive') ) :
  */
 function _zip_create_ziparchive( $sources, $destination, $exclude = array() ) {
     $zip = new ZipArchive();
-    if ( true !== $res = $zip->open( $destination, ZIPARCHIVE::CREATE ) )
+    if ( $res = $zip->open( $destination, ZIPARCHIVE::CREATE ) != true )
         return new WP_Error( 'ziparchive', $res );
 
-    foreach ( $sources as $source ) if ( @is_readable($source) )
-        if ( @is_dir($source) ) {
-            if( is_wp_error( $files = directory_list($source, true, $exclude) ) )
-                return $files;
-            foreach ( $files as $file ) if ( @is_readable($file) )
-                if ( @is_dir($file) )
-                    $zip->addEmptyDir(str_replace(parent_dir($source) . '/', '', $file . '/'));
-                elseif ( @is_file($file) )
-                    $zip->addFile($file, str_replace(parent_dir($source) . '/', '', $file));
+    foreach ( $sources as $source ) {
+        if ( ! @is_readable( $source ) )
+            continue;
+        if ( @is_dir( $source ) ) {
+            $files = directory_list( $source, true, $exclude );
+            foreach ( $files as $file ) {
+                if ( ! @is_readable( $file ) )
+                    continue;
+                if ( @is_dir( $file ) )
+                    $zip->addEmptyDir( str_replace( parent_dir( $source ) . '/', '', $file . '/' ) );
+                elseif ( @is_file( $file ) )
+                    $zip->addFile( $file, str_replace( parent_dir( $source ) . '/', '', $file ) );
+            }
         }
         elseif ( @is_file($source) )
-            $zip->addFile($source, basename($source));
-
+            $zip->addFile( $source, basename( $source ) );
+    }
+    $num_files = $zip->numFiles;
     $zip_result = $zip->close();
 
     if ( ! $zip_result )
-        return new WP_Error( 'zip_close_error', "Could not properly close archive '" . $destination . "'." );
-    return true;
+        return new WP_Error( 'zip', "Could not properly close archive '" . $destination . "'." );
+    return $num_files;
 }
 endif;
 
@@ -173,20 +179,25 @@ if ( !function_exists('_zip_create_pclzip') ) :
  * @return mixed               Returns TRUE on success or an instance of WP_Error on failure.]              [description]
  */
 function _zip_create_pclzip( $sources, $destination, $exclude = array() ) {
-    require_once(ABSPATH . 'wp-admin/includes/class-pclzip.php');
-    $zip = new PclZip($destination);
-    foreach ( $sources as $source ) if ( @is_readable($source) )
-        if ( @is_dir($source) ) {
-            if ( is_wp_error( $files = directory_list($source, true, $exclude) ) )
-                return $files;
-            if( 0 == $zip->add( $files, PCLZIP_OPT_REMOVE_PATH, parent_dir($source) ) )
-                return new WP_Error('pclzip', $zip->errorInfo(true));
+    require_once( ABSPATH . 'wp-admin/includes/class-pclzip.php' );
+    $zip = new PclZip( $destination );
+    foreach ( $sources as $source ) {
+        if ( ! @is_readable( $source ) )
+            continue;
+        if ( @is_dir( $source ) ) {
+            $files = directory_list( $source, true, $exclude );
+            $res = $zip->add( $files, PCLZIP_OPT_REMOVE_PATH, parent_dir( $source ) );
+            if ( 0 == $res )
+                return new WP_Error( 'pclzip', $zip->errorInfo( true ) );
         }
-        elseif ( @is_file($source) ) {
-            if( 0 == $zip->add( $source, PCLZIP_OPT_REMOVE_PATH, parent_dir($source) ) );
-                return new WP_Error('pclzip', $zip->errorInfo(true));
+        elseif ( @is_file( $source ) ) {
+            $res = $zip->add( $source, PCLZIP_OPT_REMOVE_PATH, parent_dir( $source ) );
+            if ( 0 == $res )
+                return new WP_Error( 'pclzip', $zip->errorInfo( true ) );
         }
-    return true;
+    }
+    $prop = $zip->properties();
+    return $prop['nb'];
 }
 endif;
 
@@ -215,42 +226,45 @@ if ( !function_exists('directory_list') ) :
  * @param  boolean $recursive Descend into subdirectories? Defaults to TRUE.
  * @return mixed              Array of all files and folders inside the base path or an instance of WP_Error.
  */
-function directory_list($base_path, $recursive = true, $exclude = array()) {
+function directory_list( $base_path, $recursive = true, $exclude = array() ) {
     $base_path = trailingslashit( str_replace( '\\', '/', $base_path ));
 
     if ( empty( $base_path ) )
         return new WP_Error( 'empty_argument', "The directory path argument cannot be empty." );
     if ( !@is_dir( $base_path ) )
         return new WP_Error( 'invalid_argument', $base_path . " is not a directory." );
-    if (!$folder_handle = @opendir($base_path))
-        return new WP_Error( 'opendir_error', "Could not open directory at: '" . $base_path . "'." );
 
     $result_list = array();
 
-    while ( false !== ( $filename = @readdir( $folder_handle ) ) ) {
-        if ( !in_array( $filename, array( ".", ".." )) && !in_array( $filename, $exclude ) && !in_array( $base_path . $filename, $exclude ) ) {
-            if ( @is_dir( $base_path . $filename . "/" ) ) {
+    if ( !$folder_handle = @opendir( $base_path ) )
+        return new WP_Error( 'opendir_error', "Could not open directory at: '" . $base_path . "'." );
+
+    while ( false !== ( $filename = readdir( $folder_handle ) ) ) {
+        if ( ! @is_readable( $base_path . $filename ) )
+            continue;
+        if ( in_array( $filename, array( ".", ".." ) ) || in_array( $filename, $exclude ) || in_array( $base_path . $filename, $exclude ) )
+            continue;
+        if ( @is_dir( $base_path . $filename . "/" ) ) {
+            $temp_list = directory_list( $base_path . $filename . "/", $recursive, $exclude );
+            if ( is_wp_error( $temp_list ) )
+                    return $temp_list;
+            if ( empty( $temp_list ) ) {
                 $result_list[] = $base_path . $filename;
-                if( $recursive ) {
-                    $temp_list = directory_list( $base_path . $filename . "/", $recursive, $exclude);
-                    if ( is_wp_error( $temp_list ) )
-                        return $temp_list;
-                    if ( ! empty( $temp_list ) )
-                        $result_list = array_merge( $result_list, $temp_list );
-                }
-            } else {
-                $result_list[] = $base_path . $filename;
+                continue;
             }
+            if( $recursive )
+                $result_list = array_merge( $result_list, $temp_list );
+        } else {
+            $result_list[] = $base_path . $filename;
         }
     }
-    @closedir($folder_handle);
+    @closedir( $folder_handle );
 
     return $result_list;
-
 }
 endif;
 
-if ( !function_exists('relative_path') ) :
+if ( !function_exists( 'relative_path' ) ) :
 /**
  * Get relative path from absolute path
  *
@@ -260,20 +274,20 @@ if ( !function_exists('relative_path') ) :
  * @param  string $to   Absolute path which will be made relative.
  * @return string       Returns a relative path.
  */
-function relative_path($from, $to) {
-    $from = str_replace('\\', '/', $from);
-    $arFrom = explode('/', rtrim($from, '/'));
-    $to = str_replace('\\', '/', $to);
-    $arTo = explode('/', rtrim($to, '/'));
-    while ( count($arFrom) && count($arTo) && ($arFrom[0] == $arTo[0]) ) {
-        array_shift($arFrom);
-        array_shift($arTo);
+function relative_path( $from, $to ) {
+    $from = str_replace( '\\', '/', $from );
+    $arFrom = explode( '/', rtrim( $from, '/' ) );
+    $to = str_replace( '\\', '/', $to );
+    $arTo = explode( '/', rtrim( $to, '/' ) );
+    while ( count( $arFrom ) && count( $arTo ) && $arFrom[0] == $arTo[0] ) {
+        array_shift( $arFrom );
+        array_shift( $arTo );
     }
-    return str_pad("", count($arFrom) * 3, '..'.'/').implode('/', $arTo);
+    return str_pad( "", count( $arFrom ) * 3, '..' . '/' ) . implode( '/', $arTo );
 }
 endif;
 
-if ( !function_exists('is_subdir') ) :
+if ( !function_exists( 'is_subdir' ) ) :
 /**
  * Finds out if a path is a subdirectory of another path.
  *
@@ -282,15 +296,17 @@ if ( !function_exists('is_subdir') ) :
  * @return boolean      Returns TRUE if the path is a subdirectory, FALSE otherwise.
  */
 function is_subdir( $dir, $of ) {
-    if( !path_is_absolute($dir) || !path_is_absolute($of) )
+    if ( !@is_dir( $dir ) || !@is_dir( $of ) )
         return false;
-    if ( 0 === strpos($dir, $of) )
+    if( !path_is_absolute( $dir ) || !path_is_absolute( $of ) )
+        return false;
+    if ( 0 === strpos( $dir, $of ) )
         return true;
     return false;
 }
 endif;
 
-if ( !function_exists('absolute_path') ) :
+if ( !function_exists( 'absolute_path' ) ) :
 /**
  * Transforms path to absolute filesystem path with forward slashes.
  *
@@ -299,25 +315,14 @@ if ( !function_exists('absolute_path') ) :
  * @return mixed        Returns the filtered path on success or FALSE on failure
  */
 function absolute_path( $path, $base ) {
-    $path = str_replace('\\', '/', $path);
-    if ( path_is_absolute($path) ) // If $path is already absolute we have nothing more to do.
-        return $path;
+    $path = path_join( $base, $path );
+    $path = str_replace( '\\', '/', $path );
+    $path = str_replace( '/./', '/', $path );
 
-    if ( ! path_is_absolute($base) ) // $base needs to be an absolute path.
-        return false;
-    $base = trailingslashit(str_replace('\\', '/', $base));
+    $pattern = '#\w+/\.\./#';
+    while( preg_match($pattern, $path) )
+        $path = preg_replace( $pattern, '', $path );
 
-    if( '../' == substr( $path, 0, 3 ) ) {
-        $path = $base . $path;
-        $pattern = '#\w+/\.\./#';
-        while( preg_match($pattern, $path) )
-            $path = preg_replace($pattern, '', $path);
-    }
-    else {
-        if( './' == substr( $path, 0 , 2 ) )
-            $path = substr($path, 2);
-        $path = $base . $path;
-    }
     return $path;
 }
 endif;
