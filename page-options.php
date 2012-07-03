@@ -5,7 +5,7 @@ echo $this->get_messages_html();
 ?>
 <div class="wrap">
     <?php screen_icon( 'options-general' ); ?>
-    <h2><?php _e( 'Backup Settings', $this->text_domain ); ?></h2>
+    <h2><?php _e( 'Backup Settings', $this->text_domain ); ?> <?php echo '<a id="need-help-link" class="add-new-h2" href="#contextual-help-wrap">' . __( "Need help?", $this->text_domain ) . '</a>'; ?></h2>
     <?php wp_nonce_field( 'closedpostboxes', 'closedpostboxesnonce', false ); ?>
     <?php wp_nonce_field( 'meta-box-order', 'meta-box-order-nonce', false ); ?>
     <div id="poststuff" class="metabox-holder<?php echo 2 == $screen_layout_columns ? ' has-right-sidebar' : ''; ?>">
@@ -97,6 +97,7 @@ echo $this->get_messages_html();
                     $("#start_wrap").removeClass("hide-if-js");
             }
         });
+        $('#need-help-link').click(function(e){e.preventDefault();$('#contextual-help-link').trigger('click')});
     });
     //]]>
 </script>
