@@ -163,7 +163,6 @@ class GDocs {
 		$this->base_url = 'https://docs.google.com/feeds/default/private/full/';
 		$this->metadata_url = 'https://docs.google.com/feeds/metadata/default';
 		$this->chunk_size = 524288; // 512 KiB
-		$this->time_limit = 120; // 2 minutes
 		$this->max_resume_attempts = 5;
 		$this->request_timeout = 5;
 		$this->resumable = false;
@@ -175,6 +174,9 @@ class GDocs {
 			'delta' => 0,
 			'cycle' => 0
 		);
+		$this->time_limit = @ini_get( 'max_execution_time' );
+		if ( ! $this->time_limit )
+			$this->time_limit = 30; // default php max exec time
 	}
 
 	/**
@@ -200,12 +202,6 @@ class GDocs {
 			case 'chunk_size':
 				if ( floatval($value) >= 0.5 ) {
 					$this->chunk_size = floatval($value) * 1024 * 1024; // Transform from MiB to bytes
-					return true;
-				}
-				break;
-			case 'time_limit':
-				if ( intval($value) >= 5 ) {
-					$this->time_limit = intval($value);
 					return true;
 				}
 				break;
@@ -235,8 +231,6 @@ class GDocs {
 		switch ( $option ) {
 			case 'chunk_size':
 				return $this->chunk_size;
-			case 'time_limit':
-				return $this->time_limit;
 			case 'ssl_verify':
 				return $this->ssl_verify;
 			case 'request_timeout':
@@ -489,9 +483,6 @@ class GDocs {
 			$this->resume_list[$id]['pointer'] = $this->pointer( $result['headers']['range'] );
 		}
 
-		// Set time limit
-		set_time_limit($this->time_limit);
-
 		// Open file for reading.
 		if ( !$this->file_handle = fopen( $this->resume_list[$id]['path'], "rb" ) )
 			return new WP_Error( 'open_error', "Could not open file '" . $this->resume_list[$id]['path'] . "' for reading." );
@@ -613,6 +604,11 @@ class GDocs {
 				$this->timer['stop'] = microtime(true);
 				$this->timer['delta'] = $this->timer['stop'] - $this->timer['start'];
 
+				if ( $this->timer['cycle'] )
+	        		$this->timer['cycle'] = ( microtime( true ) - $cycle_start + $this->timer['cycle'] ) / 2;
+	        	else
+	        		$this->timer['cycle'] = microtime(true) - $cycle_start;
+
 				unset( $this->resume_item_id );
 				unset( $this->resume_list[$id] );
 				update_option( 'gdocs_resume', $this->resume_list );
@@ -678,24 +674,23 @@ class GDocs {
 	/**
 	 * Checks if the script is nearing max execution time.
 	 *
+	 * @global float $timestart Seconds from when timer_start() is called
+	 *
 	 * @access private
 	 * @return boolean Returns TRUE if nearing max execution time, FALSE otherwise.
 	 */
-	private function approaching_timeout() {
-		if ( $time_limit = ini_get('max_execution_time') )
-			return ( $time_limit - (microtime(true) - $this->timer['start']) < $this->timer['cycle'] );
-		return false;
+	function approaching_timeout() {
+		global $timestart;
+		return $this->time_limit - (microtime(true) - $timestart) < $this->timer['cycle'];
 	}
 
 	/**
 	 * Returns the time taken for an upload to complete.
 	 *
 	 * @access public
-	 * @return mixed  Returns a float number of seconds if an upload has been completed, FALSE otherwise.
+	 * @return float  Returns the number of seconds the last upload took to complete, 0 if there has been no completed upload.
 	 */
 	public function time_taken() {
-		if ( isset( $this->timer['delta'] ) )
-			return $this->timer['delta'];
-		return false;
+		return $this->timer['delta'];
 	}
 }
