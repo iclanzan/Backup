@@ -19,16 +19,16 @@
 
 /**
  * Google OAuth2 class
- * 
+ *
  * This class handles operations realted to Google's OAuth2 service.
- * 
+ *
  * @uses  WP_Error for storing error messages.
  */
 class GOAuth {
-	
+
 	/**
 	 * Stores the base url to Google's OAuth2 server.
-	 * 
+	 *
 	 * @var string
 	 * @access  private
 	 */
@@ -36,7 +36,7 @@ class GOAuth {
 
 	/**
 	 * Stores the Client Id.
-	 * 
+	 *
  	 * @var string
  	 * @access  private
 	 */
@@ -44,7 +44,7 @@ class GOAuth {
 
 	/**
 	 * Stores the Client Secret.
-	 * 
+	 *
 	 * @var string
 	 * @access  private
 	 */
@@ -52,7 +52,7 @@ class GOAuth {
 
 	/**
 	 * Stores the redirect URI.
-	 * 
+	 *
 	 * @var string
 	 * @access  private
 	 */
@@ -60,23 +60,39 @@ class GOAuth {
 
 	/**
 	 * Stores the refresh token.
-	 * 
+	 *
 	 * @var string
-	 * @access private 
+	 * @access private
 	 */
 	private $refresh_token;
 
 	/**
 	 * Stores the access token.
-	 * 
+	 *
 	 * @var string
 	 * @access private
 	 */
 	private $access_token;
 
 	/**
+	 * Stores the number of seconds to wait for a response before timing out.
+	 *
+	 * @var integer
+	 * @access private
+	 */
+	private $request_timeout;
+
+	/**
+	 * Stores whether or not to verify host SSL certificate.
+	 *
+	 * @var boolean
+	 * @access private
+	 */
+	private $ssl_verify;
+
+	/**
 	 * Constructor - Assigns values to some properties.
-	 * 
+	 *
 	 * @param string $client_id     The Client_Id from Google API access.
 	 * @param string $client_secret The Client_secret from Google API access.
 	 * @param string $redirect_uri  The redirect URI (must be registered for Google API access).
@@ -90,8 +106,30 @@ class GOAuth {
 	}
 
 	/**
+	 * Sets an option.
+	 *
+	 * @access public
+	 * @param string $option The option to set.
+	 * @param mixed  $value  The value to set the option to.
+	 */
+	public function set_option( $option, $value ) {
+		switch ( $option ) {
+			case 'ssl_verify':
+				$this->ssl_verify = ( bool ) $value;
+				return true;
+			case 'request_timeout':
+				if ( intval( $value ) > 0 )	{
+					$this->request_timeout = intval( $value );
+					return true;
+				}
+				break;
+		}
+		return false;
+	}
+
+	/**
 	 * Requests authorization from Google's OAuth2 server to access services for a user.
-	 * 
+	 *
 	 * @access public
 	 * @param  array   $scope           Array of API URLs to services where access is wanted.
 	 * @param  string  $state           A string that is passed back from Google.
@@ -135,7 +173,7 @@ class GOAuth {
 	            'grant_type' => 'authorization_code'
 	        )
         );
-	    
+
 	    $result = wp_remote_post( $this->base_url . 'token', $args );
 
 	    if ( is_wp_error( $result ) )
@@ -148,11 +186,11 @@ class GOAuth {
 		        	$this->access_token = $result['access_token'];
 		        	return $result['refresh_token'];
 		        }
-		        return new WP_Error('no_refresh_token', "Did not receive a refresh token.");	
+		        return new WP_Error('no_refresh_token', "Did not receive a refresh token.");
 		    }
 		    else
-		    	return new WP_Error( 'bad_response', 'The server returned code ' . $result['response']['code'] . ' ' . $result['response']['message'] . ' while trying to obtain a refresh token.' );    
-    	}	
+		    	return new WP_Error( 'bad_response', 'The server returned code ' . $result['response']['code'] . ' ' . $result['response']['message'] . ' while trying to obtain a refresh token.' );
+    	}
 	}
 
 	/**
@@ -173,7 +211,7 @@ class GOAuth {
     	);
 
 	    $result = wp_remote_post( $this->base_url . 'token', $args );
-	    
+
 	    if( is_wp_error( $result ) )
 	    	return $result;
 	    else {
@@ -183,13 +221,13 @@ class GOAuth {
 		        return $result['access_token'];
 		    }
 		    else
-		    	return new WP_Error('bad_response', 'The server returned code ' . $result['response']['code'] . ' ' . $result['response']['message'] . ' while trying to obtain an access token.');    
+		    	return new WP_Error('bad_response', 'The server returned code ' . $result['response']['code'] . ' ' . $result['response']['message'] . ' while trying to obtain an access token.');
     	}
 	}
 
 	/**
 	 * Returns the access token.
-	 * 
+	 *
 	 * @access public
 	 * @return mixed  Returns the access token on success, an instance of WP_Error on failure.
 	 */
@@ -220,15 +258,15 @@ class GOAuth {
 					$this->refresh_token = '';
 					return true;
 				}
-				return new WP_Error("bad_response", "The server returned code " . $result['response']['code'] . " " . $result['response']['message'] . " while trying to revoke the refresh token.");	
+				return new WP_Error("bad_response", "The server returned code " . $result['response']['code'] . " " . $result['response']['message'] . " while trying to revoke the refresh token.");
 			}
 		}
-		return new WP_Error( 'invalid_operation', 'There is no refresh token to revoke.' );	
+		return new WP_Error( 'invalid_operation', 'There is no refresh token to revoke.' );
 	}
 
 	/**
 	 * Checks whether the refresh token is set or not.
-	 * 
+	 *
 	 * @access public
 	 * @return boolean Returns TRUE if the refresh token is set, FALSE otherwise.
 	 */
