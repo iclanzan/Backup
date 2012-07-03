@@ -56,8 +56,12 @@ Apart from not being able to purge backups from Google Drive, Backup should work
 * Added option to change the request timeout value.
 * Added option to disable specific HTTP transports.
 * Added option to disable SSL verification against a certificate.
-* Added Russian localization
+* Added Russian localization.
 * The plugin now properly handles updates. This means you won't have to reactivate the plugin after each update.
+* You can now set a time limit of 0 which will cause the backup process to run as much as it needs to.
+* Made the local backup directory web inaccessible.
+* Added a 'Need help?' button next to the title of the Settings page which opens the context help. Hopefuly people will stop asking questions that are already covered there.
+* Fixed a bug that was causing archives to have duplicate files when using PclZip.
 
 = 2.0.1 =
 * Fixed database dump not getting added to the backup archive in some circumstances.
