@@ -30,7 +30,7 @@ Domain Path: /languages
 */
 
 // Only load the plugin if needed.
-if ( is_admin() || defined('DOING_CRON') || isset($_GET['doing_wp_cron']) || isset($_GET['backup']) || isset($_GET['resume_backup']) ) {
+if ( is_admin() || defined('DOING_CRON') || isset($_GET['doing_wp_cron']) || isset($_GET['backup']) ) {
 
 // Load required classes.
 if ( ! class_exists('GOAuth') )
@@ -303,9 +303,6 @@ class Backup {
         // Add custom cron intervals
         add_filter('cron_schedules', array(&$this, 'cron_add_intervals'));
 
-        // Set the screen layout to use 2 columns
-        add_filter('screen_layout_columns', array(&$this, 'on_screen_layout_columns'), 10, 2);
-
         // Link to the settings page from the plugins pange
         add_filter('plugin_action_links', array(&$this, 'action_links'), 10, 2);
 
@@ -330,7 +327,10 @@ class Backup {
         // Resume backup on schedule
         add_action('backup_resume', array(&$this, 'backup_resume'));
 
+        // Prepare GOAuth
         $this->goauth = new GOAuth($this->options['client_id'], $this->options['client_secret'], $this->redirect_uri, $this->options['refresh_token']);
+        $this->goauth->set_option( 'request_timeout', $this->options['request_timeout'] );
+        $this->goauth->set_option( 'ssl_verify', $this->options['ssl_verify'] );
 
     }
 
@@ -371,8 +371,7 @@ class Backup {
         // Add the default options to the database, without letting WP autoload them
         add_option('backup_options', $this->options, '', 'no');
 
-        // We call this here just to get the page hook
-        $this->pagehook = add_options_page(__('Backup Settings', $this->text_domain), __('Backup', $this->text_domain), 'manage_options', 'backup', array(&$this, 'options_page'));
+        $this->pagehook = get_plugin_page_hookname( 'backup', 'options-general.php' );
 
         if ( ! $this->user_id )
             $this->user_id = get_current_user_id();
@@ -399,17 +398,14 @@ class Backup {
             update_user_meta($this->user_id, "metaboxhidden_".$this->pagehook, $meta_value);
         }
 
-        // Set the default number of columns.
-        if ( ! get_user_meta($this->user_id, "screen_layout_".$this->pagehook, true) ) {
-            update_user_meta($this->user_id, "screen_layout_".$this->pagehook, 2);
-        }
-
-        // try to create the default backup folder and backup log
+        // try to create the default backup folder, .htaccess file and backup log
         if ( !@is_dir($this->local_folder) )
-            if ( wp_mkdir_p($this->local_folder) )
-                if ( !@is_file($this->log_file) )
-                    file_put_contents($this->log_file, "#Fields:\tdate\ttime\ttype\tmessage\n");
-
+            if ( wp_mkdir_p($this->local_folder) ) {
+                if ( !@is_file( $this->local_folder . "/.htaccess" ) )
+                    file_put_contents( $this->local_folder . "/.htaccess", "Order allow,deny\nDeny from all" );
+                if ( !@is_file( $this->log_file ) )
+                    file_put_contents( $this->log_file, "#Fields:\tdate\ttime\ttype\tmessage\n" );
+            }
     }
 
     /**
@@ -458,6 +454,8 @@ class Backup {
             $this->options['ssl_verify']          = true;
             $this->options['plugin_version']      = $this->version;
             $this->options['user_info']           = array();
+
+            file_put_contents( $this->local_folder . "/.htaccess", "Order allow,deny\nDeny from all" );
         }
         update_option( 'backup_options', $this->options );
     }
@@ -491,27 +489,13 @@ class Backup {
     }
 
     /**
-     * This tells WordPress we support 2 columns on the options page.
-     *
-     * @param  array  $columns The array of columns.
-     * @param  string $screen  The ID of the current screen.
-     * @return array           Returns the array of columns.
-     */
-    function on_screen_layout_columns( $columns, $screen ) {
-        if ($screen == $this->pagehook) {
-            $columns[$this->pagehook] = 2;
-        }
-        return $columns;
-    }
-
-    /**
      * Action - Adds options page in the admin menu.
      */
     function backup_menu() {
         $this->pagehook = add_options_page(__('Backup Settings', $this->text_domain), __('Backup', $this->text_domain), 'manage_options', 'backup', array(&$this, 'options_page'));
         // Hook to update options
         add_action('load-'.$this->pagehook, array(&$this, 'options_update'));
-        // Hook to add metaboxes
+        // Hook to add metaboxes, context help and screen options
         add_action('load-'.$this->pagehook, array(&$this, 'on_load_options_page'));
     }
 
@@ -582,6 +566,8 @@ class Backup {
             '<p><a href="http://wordpress.org/extend/plugins/backup/">' . __('Plugin page on WordPress.org', $this->text_domain) . '</a></p>' .
             '<p></p><p>' . sprintf(__('If you find this plugin useful and want to support its development please consider %smaking a donation%s.', $this->text_domain), '<a href="http://hel.io/donate/">', '</a>') . '</p>'
         );
+
+        add_screen_option('layout_columns', array('max' => 2, 'default' => 2) );
 
         // Check if the local folder is writable
         if ( !@is_writable($this->local_folder) )
@@ -773,17 +759,6 @@ class Backup {
         if ( isset($_GET['action']) && 'update' == $_GET['action'] ) {
             check_admin_referer('backup_options');
 
-            // If we dont have a valid recurrence frequency stop function execution.
-            if ( !in_array($_POST['backup_frequency'], array_keys(wp_get_schedules()) )  && $_POST['backup_frequency'] != 'never' )
-                wp_die(__('You were caught trying to do an illegal operation.', $this->text_domain), __('Illegal operation', $this->text_domain));
-
-            // If we have sources that we haven't defined stop function execution.
-            if ( isset($_POST['sources']) ) {
-              if ( array_diff( $_POST['sources'], array_keys( $this->sources ) ) )
-                wp_die(__('You were caught trying to do an illegal operation.', $this->text_domain), __('Illegal operation', $this->text_domain));
-                $this->options['source_list'] = $_POST['sources'];
-            }
-
             // Validate and save chunk size.
             if ( isset($_POST['chunk_size']) ) {
                 $chunk_size = floatval($_POST['chunk_size']);
@@ -794,24 +769,15 @@ class Backup {
             }
 
             // Validate and save time limit.
-            if ( isset($_POST['time_limit']) ) {
-                $time_limit = intval($_POST['time_limit']);
-                if ( $time_limit >= 5 )
-                    $this->options['time_limit'] = $time_limit;
-                else
-                    $this->messages['error'][] = __('The upload time limit must be at least 5 seconds.', $this->text_domain);
-            }
+            if ( isset($_POST['time_limit']) )
+                $this->options['time_limit'] = absint($_POST['time_limit']);
 
             // Validate and save local and drive numbers.
             if ( isset($_POST['local_number']) ) {
-                $local_number = intval($_POST['local_number']);
-                if ( $local_number < 0 )
-                    $this->messages['error'][] = __('The number of local backups to store must be a positive integer.', $this->text_domain);
-                if ( isset($_POST['drive_number']) ) {
-                    $drive_number = intval($_POST['drive_number']);
-                    if ( $drive_number < 0 )
-                        $this->messages['error'][] = __('The number of Drive backups to store must be a positive integer.', $this->text_domain);
-                    elseif ( 0 == $local_number && 0 == $drive_number )
+                $local_number = absint( $_POST['local_number'] );
+                if ( isset( $_POST['drive_number'] ) ) {
+                    $drive_number = absint( $_POST['drive_number'] );
+                    if ( 0 == $local_number && 0 == $drive_number )
                         $this->messages['error'][] = __('You need to store at least one local or Drive backup.', $this->text_domain);
                     else {
                         $this->options['drive_number'] = $drive_number;
@@ -834,25 +800,24 @@ class Backup {
                     $this->messages['error'][] = __("Could not create log file. Please check permissions.", $this->text_domain);
                 else {
                     $this->options['local_folder'] = $_POST['local_folder'];
-                    $this->local_path = $path;
+                    $this->local_folder = $path;
                 }
             }
 
-            // Handle transports
+            // Handle transports.
             if ( !isset( $_POST['transports'] ) )
                 $this->messages['error'][] = __( "You cannot have all HTTP transports disabled.", $this->text_domain );
             else
                 $this->options['enabled_transports'] = $_POST['transports'];
 
-            // Handle exlclude list.
-            if ( isset($_POST['exclude']) ) {
-                $this->options['exclude_list'] = explode(',', $_POST['exclude']);
-                foreach ( $this->options['exclude_list'] as $i => $v )
-                    $this->options['exclude_list'][$i] = trim($v);
-            }
-
-            // Handle include list.
-            if ( isset( $_POST['include'] ) ) {
+            // Handle sources and include list.
+            if ( !isset( $_POST['sources'] ) && empty( $_POST['include'] ) )
+                $this->messages['error'][] = __( "Please make sure you select something to back up.", $this->text_domain );
+            else {
+                if ( isset( $_POST['sources'] ) )
+                    $this->options['source_list'] = $_POST['sources'];
+                else
+                    $this->options['source_list'] = array();
                 if ( !empty( $_POST['include'] ) ) {
                     $this->options['include_list'] = explode(',', $_POST['include']);
                     foreach ( $this->options['include_list'] as $i => $v )
@@ -862,11 +827,12 @@ class Backup {
                     $this->options['include_list'] = array();
             }
 
-            // If we have any error messages to display don't go any further with the function execution.
-            if ( empty($this->messages['error']) )
-                $this->messages['updated'][] = __('All changes were saved successfully.', $this->text_domain);
-            else
-                return;
+            // Handle exlclude list.
+            if ( isset($_POST['exclude']) ) {
+                $this->options['exclude_list'] = explode(',', $_POST['exclude']);
+                foreach ( $this->options['exclude_list'] as $i => $v )
+                    $this->options['exclude_list'][$i] = trim($v);
+            }
 
             if ( isset($_POST['drive_folder']) )
                 $this->options['drive_folder'] = $_POST['drive_folder'];
@@ -876,7 +842,13 @@ class Backup {
             else
                 $this->options['ssl_verify'] = false;
 
-            $this->options['request_timeout'] = intval( $_POST['request_timeout'] );
+            $this->options['request_timeout'] = absint( $_POST['request_timeout'] );
+
+            // If we have any error messages to display don't go any further with the function execution.
+            if ( empty($this->messages['error']) )
+                $this->messages['updated'][] = __('All changes were saved successfully.', $this->text_domain);
+            else
+                return;
 
             // Handle scheduling.
             if ( $this->options['backup_frequency'] != $_POST['backup_frequency'] || ( $_POST['start_hour'] != 0 || $_POST['start_minute'] != 0 ) ) {
@@ -918,16 +890,19 @@ class Backup {
         }
     }
 
-    function always_flush() {
-        if( !isset( $this->$flushed ) ) {
+    private function set_env() {
+        if( !isset( $this->set ) ) {
+            @ini_set( 'safe_mode', 0 ); // Try to disable safe mode.
+            @ini_set( 'memory_limit', apply_filters( 'admin_memory_limit', WP_MAX_MEMORY_LIMIT ) ); // We might need a lot of memory for backing up.
+            @set_time_limit( $this->options['time_limit'] ); // Set the time limit.
+            @ignore_user_abort( true ); // Allow the script to run after the user closes the window.
             // All this is needed in order that every echo gets sent to the browser.
-            // Code taken from php.net user contributed notes.
-            @apache_setenv('no-gzip', 1);
-            @ini_set('zlib.output_compression', 0);
-            @ini_set('implicit_flush', 1);
+            @apache_setenv( 'no-gzip', 1 );
+            @ini_set( 'zlib.output_compression', 0 );
+            @ini_set( 'implicit_flush', 1 );
             wp_ob_end_flush_all();
-            ob_implicit_flush(1);
-            $this->flushed = true;
+            ob_implicit_flush();
+            $this->set = true;
         }
     }
 
@@ -935,8 +910,24 @@ class Backup {
      * Initiates the backup procedure.
      */
     public function do_backup() {
+        global $wp_version;
+
         $this->log_file = $this->local_folder . '/' . $this->time . '.log';
-        $this->always_flush();
+        $this->set_env();
+
+        // Log environment information.
+        $env = "Environment: Backup " . $this->version .
+                          "; WordPress " . $wp_version .
+                          "; PHP " . phpversion() .
+                          "; SAPI " . php_sapi_name() .
+                          "; OS " . PHP_OS .
+                          "; ZIP " . $z = phpversion( 'zip' )? $z : 'false';
+        if ( (bool) ini_get('safe_mode') )
+            $env .= "; Safe mode ON";
+        $env .= "; Time limit " . ini_get( 'max_execution_time' ) . "s" .
+                "; Memory limit " . ini_get( 'memory_limit' );
+
+        $this->log( "NOTICE", $env );
 
         // Check if the backup folder is writable
         if ( !( @is_writable($this->local_folder) ) ) {
@@ -948,10 +939,7 @@ class Backup {
         $start = microtime(true);
         // Get the memory usage before we do anything.
         $initial_memory = memory_get_usage(true);
-        // We might need a lot of memory for this
-        @ini_set('memory_limit', apply_filters('admin_memory_limit', WP_MAX_MEMORY_LIMIT));
-        // Set the time limit. It might be needed for the archive creation process.
-        @set_time_limit($this->options['time_limit']);
+
 
         $file_name = $this->time . '.zip';
         $file_path = $this->local_folder . '/' . $file_name;
@@ -966,42 +954,46 @@ class Backup {
                 exit;
             }
 
-            $this->log('NOTICE', "The database dump was completed successfully in " . round($dump_time, 2) . " seconds.");
+            $this->log('NOTICE', "The database dump was completed successfully in " . round($dump_time, 3) . " seconds.");
         }
 
+        // Merge the default exclude list with the user provided one and make them absolute paths.
         $exclude = array_merge($this->options['exclude_list'], $this->exclude);
         foreach ( $exclude as $i => $path )
             if ( false !== strpos( $path, '/' ) || false !== strpos( $path, "\\" ) )
-                $exclude[$i] = absolute_path($path, ABSPATH);
+                $exclude[$i] = absolute_path( $path, ABSPATH );
 
+        // Create the source list from the user selected sources.
         $sources = array();
         foreach ( $this->options['source_list'] as $source )
             $sources[] = $this->sources[$source]['path'];
 
-        // Remove subdirectories.
+        // Remove subdirectories from the sources.
         $count = count($sources);
         for ( $i = 0; $i < $count; $i++ )
             for ( $j = 0; $j < $count; $j++ )
-                if ( $j != $i && isset($sources[$i]) && isset($sources[$j]) &&
-                    is_subdir($sources[$j], $sources[$i]) && $this->sources['database']['path'] != $sources[$j] )
-                    unset($sources[$j]);
+                if ( $j != $i && isset( $sources[$i] ) && isset( $sources[$j] ) &&
+                    is_subdir( $sources[$j], $sources[$i] ) && $this->sources['database']['path'] != $sources[$j] )
+                    unset( $sources[$j] );
 
+        // Transform include paths to absolute paths.
         $include = $this->options['include_list'];
         foreach ( $include as $i => $path )
             $include[$i] = absolute_path( $path, ABSPATH );
 
+        // Merge the include list and the sources
         $sources = array_merge( $sources, $include );
 
-        // Create archive from all enabled sources.
-        $this->log('NOTICE', "Attempting to create archive '" . $file_path . "'.");
-        $zip_time = zip($sources, $file_path, $exclude);
+        // Create archive from the file list.
+        $this->log( 'NOTICE', "Attempting to create archive '" . $file_name . "'." );
+        $zip = zip( $sources, $file_path, $exclude );
 
-        if ( is_wp_error($zip_time) ) {
-            $this->log_wp_error($zip_time);
+        if ( is_wp_error( $zip ) ) {
+            $this->log_wp_error( $zip );
             exit;
         }
 
-        $this->log('NOTICE', 'Archive created successfully in ' . round($zip_time, 2) . ' seconds. Archive file size is ' . size_format( filesize( $file_path ) ) . '.');
+        $this->log( 'NOTICE', "Successfully archived " . $zip['count'] . " files in " . round( $zip['time'], 3 ) . ' seconds. Archive file size is ' . size_format( filesize( $file_path ) ) . '.' );
         delete_path($this->dump_file);
 
         if ( $this->options['drive_number'] > 0 && $this->goauth->is_authorized() ) {
@@ -1028,14 +1020,14 @@ class Backup {
 
         // Get memory peak usage.
         $peak_memory = memory_get_peak_usage(true);
-        $this->log('NOTICE', 'Backup process completed in ' . round(microtime(true) - $start, 2) . ' seconds. Initial PHP memory usage was ' . size_format( $initial_memory, 2 ) . ' and the backup process used another ' . size_format( $peak_memory - $initial_memory, 2 ) .' of RAM.');
+        $this->log('NOTICE', 'Backup process completed in ' . round(microtime(true) - $start, 3) . ' seconds. Initial PHP memory usage was ' . size_format( $initial_memory, 2 ) . ' and the backup process used another ' . size_format( $peak_memory - $initial_memory, 2 ) .' of RAM.');
     }
 
     /**
      * Resumes an interrupted backup upload.
      */
     public function backup_resume() {
-        $this->always_flush();
+        $this->set_env();
         if ( is_wp_error( $e = $this->need_gdocs()) ) {
             $this->log_wp_error( $e );
             exit;
@@ -1085,7 +1077,7 @@ class Backup {
             exit;
         }
 
-        $this->log('NOTICE', "Archive '" . $file['title'] . "' was successfully uploaded to Google Drive in " . round($this->gdocs->time_taken(), 2) . " seconds at an upload speed of " . size_format( $this->gdocs->get_upload_speed() ) . "/s.");
+        $this->log( 'NOTICE', "Archive '" . $file['title'] . "' was successfully uploaded to Google Drive in " . round( $this->gdocs->time_taken(), 3 ) . " seconds at an upload speed of " . size_format( $this->gdocs->get_upload_speed() ) . "/s." );
         $this->options['local_files'][] = $file['path'];
         $this->options['drive_files'][] = $id;
         $this->options['last_backup'] = substr($file['title'], 0, strpos($file['title'], '.')); // take the time from the title
