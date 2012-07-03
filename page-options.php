@@ -6,18 +6,13 @@ echo $this->get_messages_html();
 <div class="wrap">
     <?php screen_icon( 'options-general' ); ?>
     <h2><?php _e( 'Backup Settings', $this->text_domain ); ?> <?php echo '<a id="need-help-link" class="add-new-h2" href="#contextual-help-wrap">' . __( "Need help?", $this->text_domain ) . '</a>'; ?></h2>
-    <?php wp_nonce_field( 'closedpostboxes', 'closedpostboxesnonce', false ); ?>
-    <?php wp_nonce_field( 'meta-box-order', 'meta-box-order-nonce', false ); ?>
-    <div id="poststuff" class="metabox-holder<?php echo 2 == $screen_layout_columns ? ' has-right-sidebar' : ''; ?>">
-        <div id="side-info-column" class="inner-sidebar">
-            <?php do_meta_boxes( $this->pagehook, 'side', '' ); ?>
-        </div>
-
+    <div id="poststuff">
         <form action="<?php echo admin_url( "options-general.php?page=backup&action=update" ); ?>" method="post">
+            <?php wp_nonce_field( 'closedpostboxes', 'closedpostboxesnonce', false ); ?>
+            <?php wp_nonce_field( 'meta-box-order', 'meta-box-order-nonce', false ); ?>
             <?php wp_nonce_field( 'backup_options' ); ?>
-            <input type="hidden" name="action" value="save_backup_options" />
-            <div id="post-body" class="has-sidebar">
-                <div id="post-body-content" class="has-sidebar-content">
+            <div id="post-body" class="metabox-holder columns-<?php echo $screen_layout_columns; ?>">
+                <div id="post-body-content">
                     <table class="form-table" style="margin-bottom: 8px">
                         <tbody>
                             <tr valign="top">
@@ -74,6 +69,11 @@ echo $this->get_messages_html();
                     <p class="submit">
                         <input name="submit" type="submit" class="button-primary" value="<?php _e( 'Save changes', $this->text_domain ) ?>" />
                     </p>
+                </div>
+                <div id="postbox-container-1" class="postbox-container">
+                    <?php do_meta_boxes( $this->pagehook, 'side', '' ); ?>
+                </div>
+                <div id="postbox-container-2" class="postbox-container">
                     <?php do_meta_boxes( $this->pagehook, 'advanced', '' ); ?>
                 </div>
                 <br class="clear"/>
