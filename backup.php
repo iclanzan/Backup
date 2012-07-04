@@ -271,6 +271,7 @@ class Backup {
                 'quota_used'          => '',
                 'chunk_size'          => 0.5, // MiB
                 'time_limit'          => 120, // seconds
+                'resume_attempts'     => 3,
                 'request_timeout'     => 5, // seconds
                 'enabled_transports'  => $this->http_transports,
                 'ssl_verify'          => true,
@@ -399,13 +400,12 @@ class Backup {
         }
 
         // try to create the default backup folder, .htaccess file and backup log
-        if ( !@is_dir($this->local_folder) )
-            if ( wp_mkdir_p($this->local_folder) ) {
-                if ( !@is_file( $this->local_folder . "/.htaccess" ) )
-                    file_put_contents( $this->local_folder . "/.htaccess", "Order allow,deny\nDeny from all" );
-                if ( !@is_file( $this->log_file ) )
-                    file_put_contents( $this->log_file, "#Fields:\tdate\ttime\ttype\tmessage\n" );
-            }
+        if ( wp_mkdir_p($this->local_folder) ) {
+            if ( !@is_file( $this->local_folder . "/.htaccess" ) )
+                file_put_contents( $this->local_folder . "/.htaccess", "Order allow,deny\nDeny from all" );
+            if ( !@is_file( $this->log_file ) )
+                file_put_contents( $this->log_file, "#Fields:\tdate\ttime\ttype\tmessage\n" );
+        }
     }
 
     /**
@@ -450,6 +450,7 @@ class Backup {
             $this->options['backup_token']        = wp_generate_password( 12, false );
             $this->options['include_list']        = array();
             $this->options['request_timeout']     = 5;
+            $this->options['resume_attempts']     = 3;
             $this->options['enabled_transports']  = $this->http_transports;
             $this->options['ssl_verify']          = true;
             $this->options['plugin_version']      = $this->version;
@@ -760,45 +761,45 @@ class Backup {
             check_admin_referer('backup_options');
 
             // Validate and save chunk size.
-            if ( isset($_POST['chunk_size']) ) {
-                $chunk_size = floatval($_POST['chunk_size']);
-                if ( 0 < $chunk_size && 0 == ($chunk_size * 10) % 5 )
-                    $this->options['chunk_size'] = $chunk_size;
-                else
-                    $this->messages['error'][] = __('The chunk size must be a multiple of 0.5 MB.', $this->text_domain);
-            }
+            $chunk_size = floatval($_POST['chunk_size']);
+            if ( 0 < $chunk_size && 0 == ($chunk_size * 10) % 5 )
+                $this->options['chunk_size'] = $chunk_size;
+            else
+                $this->messages['error'][] = __('The chunk size must be a multiple of 0.5 MB.', $this->text_domain);
 
-            // Validate and save time limit.
-            if ( isset($_POST['time_limit']) )
-                $this->options['time_limit'] = absint($_POST['time_limit']);
+            // Save time limit.
+            $this->options['time_limit'] = absint( $_POST['time_limit'] );
+
+            // Save max resume attempts.
+            $this->options['resume_attempts'] = absint( $_POST['resume_attempts'] );
 
             // Validate and save local and drive numbers.
-            if ( isset($_POST['local_number']) ) {
-                $local_number = absint( $_POST['local_number'] );
-                if ( isset( $_POST['drive_number'] ) ) {
-                    $drive_number = absint( $_POST['drive_number'] );
-                    if ( 0 == $local_number && 0 == $drive_number )
-                        $this->messages['error'][] = __('You need to store at least one local or Drive backup.', $this->text_domain);
-                    else {
-                        $this->options['drive_number'] = $drive_number;
-                        $this->options['local_number'] = $local_number;
-                    }
+            $local_number = absint( $_POST['local_number'] );
+            if ( isset( $_POST['drive_number'] ) ) {
+                $drive_number = absint( $_POST['drive_number'] );
+                if ( 0 == $local_number && 0 == $drive_number )
+                    $this->messages['error'][] = __('You need to store at least one local or Drive backup.', $this->text_domain);
+                else {
+                    $this->options['drive_number'] = $drive_number;
+                    $this->options['local_number'] = $local_number;
                 }
-                else
-                    if ( 0 >= $local_number )
-                        $this->messages['error'][] = __('You need to store at least one local backup.', $this->text_domain);
-                    else
-                        $this->options['local_number'] = $local_number;
             }
+            else
+                if ( 0 >= $local_number )
+                    $this->messages['error'][] = __('You need to store at least one local backup.', $this->text_domain);
+                else
+                    $this->options['local_number'] = $local_number;
 
             // Handle local folder change.
             if ( isset($_POST['local_folder']) && $_POST['local_folder'] != $this->options['local_folder'] ) {
                 $path = absolute_path($_POST['local_folder'], ABSPATH);
                 if ( !wp_mkdir_p($path) )
                     $this->messages['error'][] = sprintf(__('Could not create directory %s. You might want to create it manually and set the right permissions. ', $this->text_domain), '<kbd>' . $path . '</kbd>');
-                elseif ( !@is_file($path . '/' . $this->log_filename) && false === file_put_contents($path . '/' . $this->log_filename, "#Fields:\tdate\ttime\ttype\tmessage\n") )
-                    $this->messages['error'][] = __("Could not create log file. Please check permissions.", $this->text_domain);
                 else {
+                    if ( ! @is_file( $this->local_folder . "/.htaccess" ) )
+                        file_put_contents( $this->local_folder . "/.htaccess", "Order allow,deny\nDeny from all" );
+                    if ( ! @is_file( $this->log_file ) )
+                        file_put_contents( $this->log_file, "#Fields:\tdate\ttime\ttype\tmessage\n" );
                     $this->options['local_folder'] = $_POST['local_folder'];
                     $this->local_folder = $path;
                 }
@@ -828,11 +829,13 @@ class Backup {
             }
 
             // Handle exlclude list.
-            if ( isset($_POST['exclude']) ) {
+            if ( ! empty( $_POST['exclude'] ) ) {
                 $this->options['exclude_list'] = explode(',', $_POST['exclude']);
                 foreach ( $this->options['exclude_list'] as $i => $v )
                     $this->options['exclude_list'][$i] = trim($v);
             }
+            else
+                $this->options['exclude_list'] = array();
 
             if ( isset($_POST['drive_folder']) )
                 $this->options['drive_folder'] = $_POST['drive_folder'];
@@ -842,6 +845,7 @@ class Backup {
             else
                 $this->options['ssl_verify'] = false;
 
+            // Save request timeout.
             $this->options['request_timeout'] = absint( $_POST['request_timeout'] );
 
             // If we have any error messages to display don't go any further with the function execution.
@@ -1103,6 +1107,7 @@ class Backup {
             $this->gdocs->set_option('chunk_size', $this->options['chunk_size']);
             $this->gdocs->set_option('time_limit', $this->options['time_limit']);
             $this->gdocs->set_option('request_timeout', $this->options['request_timeout']);
+            $this->gdocs->set_option('max_resume_attempts', $this->options['resume_attempts']);
         }
         return true;
     }

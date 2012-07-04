@@ -53,6 +53,7 @@ Apart from not being able to purge backups from Google Drive, Backup should work
 * Now generating separate log files for each backup.
 * Added a unique token to the manual backup URI so that backups can't be deployed by anyone.
 * Displaying user information for the currently authorized account. This is useful in case of multiple Google accounts when the user doesn't remember which account was authorized.
+* Added option to control the maximum resume attempts.
 * Added option to change the request timeout value.
 * Added option to disable specific HTTP transports.
 * Added option to disable SSL verification against a certificate.
