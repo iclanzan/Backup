@@ -7,11 +7,11 @@ echo $this->get_messages_html();
     <?php screen_icon( 'options-general' ); ?>
     <h2><?php _e( 'Backup Settings', $this->text_domain ); ?> <?php echo '<a id="need-help-link" class="add-new-h2" href="#contextual-help-wrap">' . __( "Need help?", $this->text_domain ) . '</a>'; ?></h2>
     <div id="poststuff">
-        <form action="<?php echo admin_url( "options-general.php?page=backup&action=update" ); ?>" method="post">
-            <?php wp_nonce_field( 'closedpostboxes', 'closedpostboxesnonce', false ); ?>
-            <?php wp_nonce_field( 'meta-box-order', 'meta-box-order-nonce', false ); ?>
-            <?php wp_nonce_field( 'backup_options' ); ?>
-            <div id="post-body" class="metabox-holder columns-<?php echo $screen_layout_columns; ?>">
+        <div id="post-body" class="metabox-holder columns-<?php echo $screen_layout_columns; ?>">
+            <form action="<?php echo admin_url( "options-general.php?page=backup&action=update" ); ?>" method="post">
+                <?php wp_nonce_field( 'closedpostboxes', 'closedpostboxesnonce', false ); ?>
+                <?php wp_nonce_field( 'meta-box-order', 'meta-box-order-nonce', false ); ?>
+                <?php wp_nonce_field( 'backup_options' ); ?>
                 <div id="post-body-content">
                     <table class="form-table" style="margin-bottom: 8px">
                         <tbody>
@@ -70,34 +70,14 @@ echo $this->get_messages_html();
                         <input name="submit" type="submit" class="button-primary" value="<?php _e( 'Save changes', $this->text_domain ) ?>" />
                     </p>
                 </div>
-                <div id="postbox-container-1" class="postbox-container">
-                    <?php do_meta_boxes( $this->pagehook, 'side', '' ); ?>
-                </div>
-                <div id="postbox-container-2" class="postbox-container">
-                    <?php do_meta_boxes( $this->pagehook, 'advanced', '' ); ?>
-                </div>
-                <br class="clear"/>
+            </form>
+            <div id="postbox-container-1" class="postbox-container">
+                <?php do_meta_boxes( $this->pagehook, 'side', '' ); ?>
             </div>
-        </form>
+            <div id="postbox-container-2" class="postbox-container">
+                <?php do_meta_boxes( $this->pagehook, 'advanced', '' ); ?>
+            </div>
+            <br class="clear"/>
+        </div>
     </div>
 </div>
-<script type="text/javascript">
-    //<![CDATA[
-    jQuery(document).ready( function($) {
-        $('.if-js-closed').removeClass('if-js-closed').addClass('closed');
-        postboxes.add_postbox_toggles('<?php echo $this->pagehook; ?>');
-        var val = "";
-        $('#backup_frequency').change(function(){
-            val = $("#backup_frequency option:selected").val();
-            switch(val) {
-                case "never":
-                    $("#start_wrap").addClass("hide-if-js");
-                    break;
-                default:
-                    $("#start_wrap").removeClass("hide-if-js");
-            }
-        });
-        $('#need-help-link').click(function(e){e.preventDefault();$('#contextual-help-link').trigger('click')});
-    });
-    //]]>
-</script>

@@ -509,6 +509,8 @@ class Backup {
         wp_enqueue_script('wp-lists');
         wp_enqueue_script('postbox');
 
+        add_action('admin_print_footer_scripts', array( &$this, 'print_footer_scripts' ) );
+
         // Add the metaboxes
         add_meta_box('metabox-authorization', __('Authorization', $this->text_domain), array(&$this, 'metabox_authorization_content'), $this->pagehook, 'side', 'core');
         add_meta_box('metabox-status', __('Status', $this->text_domain), array(&$this, 'metabox_status_content'), $this->pagehook, 'side', 'core');
@@ -581,6 +583,29 @@ class Backup {
     function options_page() {
         global $screen_layout_columns;
         require_once('page-options.php');
+    }
+
+    function print_footer_scripts() {
+        ?><script type="text/javascript">
+    //<![CDATA[
+    jQuery(document).ready( function($) {
+        $('.if-js-closed').removeClass('if-js-closed').addClass('closed');
+        postboxes.add_postbox_toggles('<?php echo $this->pagehook; ?>');
+        var val = "";
+        $('#backup_frequency').change(function(){
+            val = $("#backup_frequency option:selected").val();
+            switch(val) {
+                case "never":
+                    $("#start_wrap").addClass("hide-if-js");
+                    break;
+                default:
+                    $("#start_wrap").removeClass("hide-if-js");
+            }
+        });
+        $('#need-help-link').click(function(e){e.preventDefault();$('#contextual-help-link').trigger('click')});
+    });
+    //]]>
+</script><?php
     }
 
     /**
@@ -687,6 +712,10 @@ class Backup {
                             '<tr valign="top">' .
                                 '<th scope="row"><label for="time_limit">' . __('Time limit', $this->text_domain) . '</label></th>' .
                                 '<td><input id="time_limit" name="time_limit" class="small-text" type="number" min="0" step="1" value="' . intval($this->options['time_limit']) . '" /> <span>' . __("seconds", $this->text_domain) . '</span></td>' .
+                            '</tr>' .
+                            '<tr valign="top">' .
+                                '<th scope="row"><label for="resume_attempts">' . __('Max resume attempts', $this->text_domain) . '</label></th>' .
+                                '<td><input id="resuem_attempts" name="resume_attempts" class="small-text" type="number" min="0" step="1" value="' . intval($this->options['resume_attempts']) . '" /></td>' .
                             '</tr>' .
                         '</tbody>' .
                     '</table>' .
