@@ -22,7 +22,7 @@ You are in total control of what files and directories get backed up.
 
 == Installation ==
 
-The plugin requires WordPress 3.4 and is installed like any other plugin.
+The plugin requires WordPress 3.0 or higher and is installed like any other plugin.
 
 1. Upload the plugin to the `/wp-contents/plugins/` folder.
 2. Activate the plugin from the 'Plugins' menu in WordPress.

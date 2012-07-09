@@ -1168,9 +1168,9 @@ class Backup {
      */
     private function get_messages_html() {
         $ret = '';
-        foreach ( array_keys($this->messages) as $type ) {
+        foreach( $this->messages as $type => $messages )
             $ret .= '<div class="' . $type . '">';
-            foreach ( $this->messages[$type] as $message )
+            foreach ( $messages as $message )
                 $ret .= '<p>' . $message . '</p>';
             $ret .= '</div>';
         }
