@@ -6,7 +6,7 @@ Google Drive.
 
 ## Description
 
-Version 2.1 is out and it's full of improvements and new features!
+Version 2.1 is out and addresses some serious security issues, so everyone is advised to upgrade.
 
 If you use this plugin and find it useful please consider [donating](http://hel.io/donate/ "Make a donation for your
 favorite WordPress plugin."). I have invested (and continue to do so) a lot of time and effort into making this a useful
@@ -15,12 +15,12 @@ and polished product even though at the moment I have no source of income. Even 
 Backup is a plugin that provides backup capabilities for Wordpress. Backups are `zip` archives created locally and
 uploaded to a folder of your choosing on Google Drive.
 
-You are in total control of what files and directories get backed up. 
+You are in total control of what files and directories get backed up.
 
 
 ## Installation
 
-The plugin requires WordPress 3.4 and is installed like any other plugin.
+The plugin requires WordPress 3.4 or higher and is installed like any other plugin.
 
 - Upload the plugin to the `/wp-contents/plugins/` folder.
 - Activate the plugin from the 'Plugins' menu in WordPress.
@@ -43,13 +43,21 @@ If you need support configuring the plugin click on the `help` button on the top
 - Outputting progress when doing manual backup.
 - Now generating separate log files for each backup.
 - Added a unique token to the manual backup URI so that backups can't be deployed by anyone.
+- The default backup folder name contains the unique token and is web inaccessible.
 - Displaying user information for the currently authorized account. This is useful in case of multiple Google accounts when the user doesn't remember which account was authorized.
+- Added option to manually enter the refresh token in case you already authorized your account on another website using this plugin.
+- You can now give backup archives a custom title.
+- Added option to control the maximum resume attempts.
 - Added option to change the request timeout value.
 - Added option to disable specific HTTP transports.
 - Added option to disable SSL verification against a certificate.
-- Added Russian localization
+- Added the ability to manually enter the refresh token in case you want to use the same Client ID for more than one WordPress site.
+- Added Russian localization.
 - The plugin now properly handles updates. This means you won't have to reactivate the plugin after each update.
-- Other minor bug fixes.
+- You can now set a time limit of 0 which will cause the backup process to run as much as it needs to. This is not recommended though.
+- Added a 'Need help?' button next to the title of the Settings page which opens the context help. Hopefully people will stop asking questions that are already covered there.
+- Dates are now localized.
+- Fixed a bug that was causing archives to have duplicate files when using PclZip.
 
 **2.0.1**
 - Fixed database dump not getting added to the backup archive in some circumstances.
