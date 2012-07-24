@@ -280,7 +280,10 @@ class Backup {
 			);
 		}
 		else
-			if ( !isset( $this->options['plugin_version'] ) || $this->version > $this->options['plugin_version'] )
+			if (
+				!isset( $this->options['plugin_version'] ) ||
+				version_compare( $this->version, $this->options['plugin_version'], '>' )
+			)
 				add_action( 'init', array( &$this, 'upgrade' ), 1 );
 
 		$this->local_folder = absolute_path( $this->options['local_folder'], ABSPATH );
@@ -392,8 +395,8 @@ class Backup {
 			}
 
 			// check WordPress version
-			if ( version_compare( $wp_version, '3.0', '<' ) ) {
-			  throw new Exception( __( 'Backup requires WordPress 3.0 or higher!', $this->text_domain ) );
+			if ( version_compare( $wp_version, '3.4', '<' ) ) {
+			  throw new Exception( __( 'Backup requires WordPress 3.4 or higher!', $this->text_domain ) );
 			}
 		}
 		catch ( Exception $e ) {
