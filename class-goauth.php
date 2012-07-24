@@ -1,20 +1,21 @@
 <?php
-/*  Copyright 2012 Sorin Iclanzan  (email : sorin@iclanzan.com)
+/*
+	Copyright 2012 Sorin Iclanzan  (email : sorin@hel.io)
 
 	This file is part of Backup.
 
-    Backup is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
+	Backup is free software: you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
 
-    Backup is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
+	Backup is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with Backup. If not, see http://www.gnu.org/licenses/gpl.html.
+	You should have received a copy of the GNU General Public License
+	along with Backup. If not, see http://www.gnu.org/licenses/gpl.html.
 */
 
 /**
@@ -37,8 +38,8 @@ class GOAuth {
 	/**
 	 * Stores the Client Id.
 	 *
- 	 * @var string
- 	 * @access  private
+	 * @var string
+	 * @access  private
 	 */
 	private $client_id;
 
@@ -93,38 +94,55 @@ class GOAuth {
 	/**
 	 * Constructor - Assigns values to some properties.
 	 *
-	 * @param string $client_id     The Client_Id from Google API access.
-	 * @param string $client_secret The Client_secret from Google API access.
-	 * @param string $redirect_uri  The redirect URI (must be registered for Google API access).
-	 * @param string $refresh_token Optionally specify a refresh token if authorization was already granted.
+	 * @param array $args Optional. The list of options and values to set
 	 */
-	function __construct( $client_id, $client_secret, $redirect_uri, $refresh_token = '' ) {
-		$this->client_id = $client_id;
-		$this->client_secret = $client_secret;
-		$this->redirect_uri = $redirect_uri;
-		$this->refresh_token = $refresh_token;
+	function __construct( $args = array() ) {
+		$default_args = array(
+			'client_id'       => '',
+			'client_secret'   => '',
+			'redirect_uri'    => '',
+			'refresh_token'   => '',
+			'request_timeout' => 5,
+			'ssl_verify'      => true
+		);
+		$this->set_options( array_merge( $default_args, $args ) );
+	}
+
+	/**
+	 * Sets multiple options at once.
+	 *
+	 * @access public
+	 * @param  array    $args List of options and values to set
+	 * @return boolean        Returns TRUE on success, FALSE on failure.
+	 */
+	public function set_options( $args ) {
+		if ( ! is_array( $args ) )
+			return false;
+		foreach ( $args as $option => $value )
+			$this->set_option( $option, $value );
 	}
 
 	/**
 	 * Sets an option.
 	 *
 	 * @access public
-	 * @param string $option The option to set.
-	 * @param mixed  $value  The value to set the option to.
+	 * @param  string $option The option to set.
+	 * @param  mixed  $value  The value to set the option to.
+	 * @return boolean        Returns TRUE on success, FALSE on failure.
 	 */
 	public function set_option( $option, $value ) {
 		switch ( $option ) {
 			case 'ssl_verify':
 				$this->ssl_verify = ( bool ) $value;
-				return true;
+				return;
 			case 'request_timeout':
-				if ( intval( $value ) > 0 )	{
+				if ( intval( $value ) > 0 )
 					$this->request_timeout = intval( $value );
-					return true;
-				}
-				break;
+				return;
+			default:
+					$this->$option = ( string ) $value;
+					return;
 		}
-		return false;
 	}
 
 	/**
@@ -137,19 +155,19 @@ class GOAuth {
 	 * @return NULL
 	 */
 	public function request_authorization( $scope = array() , $state = '', $approval_prompt = false ) {
-	    $params = array(
-	        'response_type' => 'code',
-	        'client_id' => $this->client_id,
-	        'redirect_uri' => $this->redirect_uri,
-	        'scope' => implode( ' ', $scope ),
-	        'access_type' => 'offline',
-	    );
-	    if ( ! empty( $state ) )
-	    	$params['state'] = $state;
-	    if ( $approval_prompt )
-	    	$params['approval_prompt'] = $force;
+		$params = array(
+			'response_type' => 'code',
+			'client_id' => $this->client_id,
+			'redirect_uri' => $this->redirect_uri,
+			'scope' => implode( ' ', $scope ),
+			'access_type' => 'offline',
+		);
+		if ( ! empty( $state ) )
+			$params['state'] = $state;
+		if ( $approval_prompt )
+			$params['approval_prompt'] = $force;
 
-	    header( 'Location: ' . $this->base_url . 'auth?' . http_build_query( $params ) );
+		header( 'Location: ' . $this->base_url . 'auth?' . http_build_query( $params ) );
 	}
 
 	/**
@@ -161,36 +179,38 @@ class GOAuth {
 	 * @return mixed        Returns a refresh token on success or an instance of WP_Error on failure.
 	 */
 	public function request_refresh_token( $code = '' ) {
-        if ( $code == '' )
-        	$code = $_GET['code'];
+		if ( $code == '' )
+			$code = $_GET['code'];
 
-        $args = array(
-	        'body' => array(
-	            'code' => $code,
-	            'client_id' => $this->client_id,
-	            'client_secret' => $this->client_secret,
-	            'redirect_uri' => $this->redirect_uri,
-	            'grant_type' => 'authorization_code'
-	        )
-        );
+		$args = array(
+			'timeout' => $this->request_timeout,
+			'ssl_verify' => $this->ssl_verify,
+			'body' => array(
+				'code' => $code,
+				'client_id' => $this->client_id,
+				'client_secret' => $this->client_secret,
+				'redirect_uri' => $this->redirect_uri,
+				'grant_type' => 'authorization_code'
+			)
+		);
 
-	    $result = wp_remote_post( $this->base_url . 'token', $args );
+		$result = wp_remote_post( $this->base_url . 'token', $args );
 
-	    if ( is_wp_error( $result ) )
-	    	return $result;
-	    else {
-	    	if ( $result['response']['code'] == '200' )	{
-		        $result = json_decode( $result['body'], true );
-		        if ( isset($result['refresh_token']) ) {
-		        	$this->refresh_token = $result['refresh_token'];
-		        	$this->access_token = $result['access_token'];
-		        	return $result['refresh_token'];
-		        }
-		        return new WP_Error('no_refresh_token', "Did not receive a refresh token.");
-		    }
-		    else
-		    	return new WP_Error( 'bad_response', 'The server returned code ' . $result['response']['code'] . ' ' . $result['response']['message'] . ' while trying to obtain a refresh token.' );
-    	}
+		if ( is_wp_error( $result ) )
+			return $result;
+		else {
+			if ( $result['response']['code'] == '200' )	{
+				$result = json_decode( $result['body'], true );
+				if ( isset($result['refresh_token']) ) {
+					$this->refresh_token = $result['refresh_token'];
+					$this->access_token = $result['access_token'];
+					return $result['refresh_token'];
+				}
+				return new WP_Error('no_refresh_token', "Did not receive a refresh token.");
+			}
+			else
+				return new WP_Error( 'bad_response', 'The server returned code ' . $result['response']['code'] . ' ' . $result['response']['message'] . ' while trying to obtain a refresh token.' );
+		}
 	}
 
 	/**
@@ -202,27 +222,29 @@ class GOAuth {
 	 */
 	private function request_access_token() {
 		$args = array(
-            'body' => array(
-                'refresh_token' => $this->refresh_token,
-                'client_id' => $this->client_id,
-                'client_secret' => $this->client_secret,
-                'grant_type' => 'refresh_token'
-            )
-    	);
+			'timeout' => $this->request_timeout,
+			'ssl_verify' => $this->ssl_verify,
+			'body' => array(
+				'refresh_token' => $this->refresh_token,
+				'client_id' => $this->client_id,
+				'client_secret' => $this->client_secret,
+				'grant_type' => 'refresh_token'
+			)
+		);
 
-	    $result = wp_remote_post( $this->base_url . 'token', $args );
+		$result = wp_remote_post( $this->base_url . 'token', $args );
 
-	    if( is_wp_error( $result ) )
-	    	return $result;
-	    else {
-	    	if ( $result['response']['code'] == '200' )	{
-		        $result = json_decode( $result['body'], true );
-		        $this->access_token = $result['access_token'];
-		        return $result['access_token'];
-		    }
-		    else
-		    	return new WP_Error('bad_response', 'The server returned code ' . $result['response']['code'] . ' ' . $result['response']['message'] . ' while trying to obtain an access token.');
-    	}
+		if( is_wp_error( $result ) )
+			return $result;
+		else {
+			if ( $result['response']['code'] == '200' )	{
+				$result = json_decode( $result['body'], true );
+				$this->access_token = $result['access_token'];
+				return $result['access_token'];
+			}
+			else
+				return new WP_Error('bad_response', 'The server returned code ' . $result['response']['code'] . ' ' . $result['response']['message'] . ' while trying to obtain an access token.');
+		}
 	}
 
 	/**
@@ -271,6 +293,10 @@ class GOAuth {
 	 * @return boolean Returns TRUE if the refresh token is set, FALSE otherwise.
 	 */
 	public function is_authorized() {
-		return !empty( $this->refresh_token );
+		return (
+			!empty( $this->refresh_token ) &&
+			!empty( $this->client_id ) &&
+			!empty( $this->client_secret )
+		);
 	}
 }

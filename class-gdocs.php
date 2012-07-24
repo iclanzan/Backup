@@ -1,20 +1,21 @@
 <?php
-/*  Copyright 2012 Sorin Iclanzan  (email : sorin@iclanzan.com)
+/*
+	Copyright 2012 Sorin Iclanzan  (email : sorin@hel.io)
 
 	This file is part of Backup.
 
-    Backup is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
+	Backup is free software: you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
 
-    Backup is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
+	Backup is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with Backup. If not, see http://www.gnu.org/licenses/gpl.html.
+	You should have received a copy of the GNU General Public License
+	along with Backup. If not, see http://www.gnu.org/licenses/gpl.html.
 */
 
 /**
@@ -67,14 +68,6 @@ class GDocs {
 	private $cache = array();
 
 	/**
-	 * Stores the handle of the file open for uploading.
-	 *
-	 * @var resource
-	 * @access private
-	 */
-	private $file_handle;
-
-	/**
 	 * Files are uploadded in chunks of this size in bytes.
 	 *
 	 * @var integer
@@ -107,35 +100,12 @@ class GDocs {
 	private $upload_file_type;
 
 	/**
-	 * Stores information about uploads that might need to be resumed.
+	 * Stores info about the file being uploaded.
 	 *
 	 * @var array
 	 * @access private
 	 */
-	private $resume_list = array();
-
-	/**
-	 * Stores the ID of the item that will be resumed
-	 *
-	 * @var array
-	 * @access private
-	 */
-	private $resume_item_id;
-
-	/**
-	 * Stores the maximum number of resume attempts
-	 *
-	 * @var integer
-	 * @access private
-	 */
-	private $max_resume_attempts;
-
-	/**
-	 * This is true if a failed upload is resumable.
-	 *
-	 * @var boolean
-	 */
-	private $resumable;
+	private $file;
 
 	/**
 	 * Stores the number of seconds the upload process is allowed to run
@@ -165,9 +135,7 @@ class GDocs {
 		$this->chunk_size = 524288; // 512 KiB
 		$this->max_resume_attempts = 5;
 		$this->request_timeout = 5;
-		$this->resumable = false;
 		$this->ssl_verify = true;
-		$this->resume_list = get_option( 'gdocs_resume', $this->add_option( array() ) );
 		$this->timer = array(
 			'start' => 0,
 			'stop'  => 0,
@@ -175,19 +143,8 @@ class GDocs {
 			'cycle' => 0
 		);
 		$this->time_limit = @ini_get( 'max_execution_time' );
-		if ( ! $this->time_limit )
+		if ( ! $this->time_limit && '0' !== $this->time_limit )
 			$this->time_limit = 30; // default php max exec time
-	}
-
-	/**
-	 * Add the default option to the database.
-	 *
-	 * @param  mixed $option The option to add.
-	 * @return mixed         Returns the parameter.
-	 */
-	private function add_option( $option ) {
-		add_option('gdocs_resume', $option, '', 'no');
-		return $option;
 	}
 
 	/**
@@ -299,18 +256,18 @@ class GDocs {
 	private function cache_feed( $url ) {
 		$result = $this->request( $url );
 
-	    if ( is_wp_error( $result ) )
-	    	return $result;
+		if ( is_wp_error( $result ) )
+			return $result;
 
-    	if ( $result['response']['code'] == '200' ) {
-    		$feed = @simplexml_load_string( $result['body'] );
-    		if ( $feed === false )
-    			return new WP_Error( 'invalid_data', "Could not create SimpleXMLElement from '" . $result['body'] . "'." );
+		if ( $result['response']['code'] == '200' ) {
+			$feed = @simplexml_load_string( $result['body'] );
+			if ( $feed === false )
+				return new WP_Error( 'invalid_data', "Could not create SimpleXMLElement from '" . $result['body'] . "'." );
 
-    		$this->cache[$url] = $feed;
-    		return true;
-    	}
-	    return new WP_Error( 'bad_response', "Received response code '" . $result['response']['code'] . " " . $result['response']['message'] . "' while trying to get '" . $url . "'. Response body: " . $result['body'] );
+			$this->cache[$url] = $feed;
+			return true;
+		}
+		return new WP_Error( 'bad_response', "Received response code '" . $result['response']['code'] . " " . $result['response']['message'] . "' while trying to get '" . $url . "'. Response body: " . $result['body'] );
 
 	}
 
@@ -322,15 +279,15 @@ class GDocs {
 	 * @return mixed      Returns TRUE on success, an instance of WP_Error on failure.
 	 */
 	public function delete_resource( $id ) {
-	    $headers = array( 'If-Match' => '*' );
+		$headers = array( 'If-Match' => '*' );
 
-	    $result = $this->request( $this->base_url . $id . '?delete=true', 'DELETE', $headers );
-	    if ( is_wp_error( $result ) )
-	    	return $result;
+		$result = $this->request( $this->base_url . $id . '?delete=true', 'DELETE', $headers );
+		if ( is_wp_error( $result ) )
+			return $result;
 
-	    if ( $result['response']['code'] == '200' )
-	        return true;
-	    return new WP_Error( 'bad_response', "Received response code '" . $result['response']['code'] . " " . $result['response']['message'] . "' while trying to delete resource '" . $id . "'. The resource might not have been deleted." );
+		if ( $result['response']['code'] == '200' )
+			return true;
+		return new WP_Error( 'bad_response', "Received response code '" . $result['response']['code'] . " " . $result['response']['message'] . "' while trying to delete resource '" . $id . "'. The resource might not have been deleted." );
 	}
 
 	/**
@@ -341,19 +298,19 @@ class GDocs {
 	 * @return mixed          Returns a link on success, instance of WP_Error on failure.
 	 */
 	private function get_resumable_create_media_link( $parent = '' ) {
-	    $url = $this->base_url;
-	    if ( $parent )
-	        $url .= $parent;
+		$url = $this->base_url;
+		if ( $parent )
+			$url .= $parent;
 
 		$feed = $this->get_feed( $url );
 
 		if ( is_wp_error( $feed ) )
 			return $feed;
 
-    	foreach ( $feed->link as $link )
-            if ( $link['rel'] == 'http://schemas.google.com/g/2005#resumable-create-media' )
-                return ( string ) $link['href'];
-        return new WP_Error( 'not_found', "The 'resumable_create_media_link' was not found in feed." );
+		foreach ( $feed->link as $link )
+			if ( $link['rel'] == 'http://schemas.google.com/g/2005#resumable-create-media' )
+				return ( string ) $link['href'];
+		return new WP_Error( 'not_found', "The 'resumable_create_media_link' was not found in feed." );
 	}
 
 	/**
@@ -389,16 +346,16 @@ class GDocs {
 	 *
 	 * @uses   wp_check_filetype
 	 * @access public
+	 *
 	 * @param  string  $file   Path to the file that is to be uploaded.
 	 * @param  string  $title  Title to be given to the file.
 	 * @param  string  $parent ID of the folder in which to upload the file.
 	 * @param  string  $type   MIME type of the file to be uploaded. The function tries to identify the type if it is omitted.
-	 * @return mixed           Returns TRUE on success, an instance of WP_Error on failure.
+	 * @return mixed           Returns the URI where to upload on success, an instance of WP_Error on failure.
 	 */
 	public function prepare_upload( $file, $title, $parent = '', $type = '' ) {
-
-		if ( ! @is_readable($file) )
-			return new WP_Error('not_file', "The path '" . $file . "' does not point to a readable file.");
+		if ( ! @is_readable( $file ) )
+			return new WP_Error( 'not_file', "The path '" . $file . "' does not point to a readable file." );
 
 		// If a mime type wasn't passed try to guess it from the extension based on the WordPress allowed mime types
 		if ( empty( $type ) ) {
@@ -406,43 +363,46 @@ class GDocs {
 			$this->upload_file_type = $type = $check['type'];
 		}
 
-	    $size = filesize( $file );
+		$size = filesize( $file );
 
-	    $body = '<?xml version=\'1.0\' encoding=\'UTF-8\'?><entry xmlns="http://www.w3.org/2005/Atom" xmlns:docs="http://schemas.google.com/docs/2007"><category scheme="http://schemas.google.com/g/2005#kind" term="http://schemas.google.com/docs/2007#file"/><title>' . $title . '</title></entry>';
+		$body = '<?xml version=\'1.0\' encoding=\'UTF-8\'?><entry xmlns="http://www.w3.org/2005/Atom" xmlns:docs="http://schemas.google.com/docs/2007"><category scheme="http://schemas.google.com/g/2005#kind" term="http://schemas.google.com/docs/2007#file"/><title>' . $title . '</title></entry>';
 
-	    $headers = array(
-	        'Content-Type' => 'application/atom+xml',
-	        'X-Upload-Content-Type' => $type,
-	        'X-Upload-Content-Length' => (string) $size
-	    );
+		$headers = array(
+			'Content-Type' => 'application/atom+xml',
+			'X-Upload-Content-Type' => $type,
+			'X-Upload-Content-Length' => (string) $size
+		);
 
-	    $url = $this->get_resumable_create_media_link( $parent );
+		$url = $this->get_resumable_create_media_link( $parent );
 
-	    if ( is_wp_error( $url ) )
-	    	return $url;
+		if ( is_wp_error( $url ) )
+			return $url;
 
-	    $url .= '?convert=false'; // needed to upload a file
+		$url .= '?convert=false'; // needed to upload a file
 
-	    $result = $this->request( $url, 'POST', $headers, $body );
+		$result = $this->request( $url, 'POST', $headers, $body );
 
-	    if ( is_wp_error( $result ) )
-	    	return $result;
+		if ( is_wp_error( $result ) )
+			return $result;
 
-	    if ( $result['response']['code'] != '200' )
-	    	return new WP_Error( 'bad_response', "Received response code '" . $result['response']['code'] . " " . $result['response']['message'] . "' while trying to get '" . $url . "'." );
+		if ( $result['response']['code'] != '200' )
+			return new WP_Error( 'bad_response', "Received response code '" . $result['response']['code'] . " " . $result['response']['message'] . "' while trying to get '" . $url . "'." );
 
-	    array_unshift( $this->resume_list, array(
-    		'path'     => $file,
-    		'title'    => $title,
-    		'size'     => $size,
-    		'location' => $result['headers']['location'],
-    		'pointer'  => 0,
-    		'attempt'  => 0,
-    		'used'     => false
-        ) );
-        update_option( 'gdocs_resume', $this->resume_list );
+		$this->file = array(
+			'path'      => $file,
+			'size'      => $size,
+			'location'  => $result['headers']['location'],
+			'pointer'   => 0
+		);
 
-        return true;
+		// Open file for reading.
+		if ( !$this->file['handle'] = fopen( $file, "rb" ) )
+			return new WP_Error( 'open_error', "Could not open file '" . $file . "' for reading." );
+
+		// Start timer
+		$this->timer['start'] = microtime( true );
+
+		return $result['headers']['location'];
 	}
 
 
@@ -450,82 +410,55 @@ class GDocs {
 	 * Resume an upload.
 	 *
 	 * @access public
-	 * @return mixed   Returns TRUE on success, an instance of WP_Error on failure.
+	 * @param  string $file     Path to the file which needs to be uploaded
+	 * @param  string $location URI where to upload the file
+	 * @return mixed            Returns the next location URI on success, an instance of WP_Error on failure.
 	 */
-	public function resume_upload() {
-		$id = $this->get_resume_item_id();
-		if( false === $id )
-			return new WP_Error("no_items", "There are no uploads that need to be resumed.");
-		if ( ! @is_readable($this->resume_list[$id]['path']) ) {
-			unset($this->resume_list[$id]);
-			update_option('gdocs_resume', $this->resume_list);
-			return new WP_Error('not_file', "The path '" . $this->resume_list[$id]['path'] . "' does not point to a readable file. Upload has been canceled.");
-		}
+	public function resume_upload( $file, $location ) {
 
-		// Mark resumable item as being in use to prevent concurrent GDocs instances from using it.
-		$this->resume_list[$id]['used'] = true;
-		update_option( 'gdocs_resume', $this->resume_list );
+		if ( ! @is_readable( $file ) )
+			return new WP_Error( 'not_file', "The path '" . $this->resume_list[$id]['path'] . "' does not point to a readable file. Upload has been canceled." );
 
-		// If this is not the first time we're trying to upload the file we need to find out how much we uploaded.
-		if ( 0 != $this->resume_list[$id]['pointer'] ) {
-			$headers = array( 'Content-Range' => 'bytes */' . $this->resume_list[$id]['size'] );
-			$result = $this->request( $this->resume_list[$id]['location'], 'PUT', $headers );
-			if( is_wp_error( $result ) ) {
-				$this->set_resumable( true );
-				return $result;
+		$size = filesize( $file );
+
+		$headers = array( 'Content-Range' => 'bytes */' . $size );
+		$result = $this->request( $location, 'PUT', $headers );
+		if( is_wp_error( $result ) )
+			return $result;
+
+		if ( '308' != $result['response']['code'] ) {
+			if ( '201' == $result['response']['code'] ) {
+				$feed = @simplexml_load_string( $result['body'] );
+				if ( $feed === false )
+					return new WP_Error( 'invalid_data', "Could not create SimpleXMLElement from '" . $result['body'] . "'." );
+				$this->file['id'] = substr( ( string ) $feed->children( "http://schemas.google.com/g/2005" )->resourceId, 5 );
+				return true;
 			}
-			if ( $result['response']['code'] != '308' ) {
-				$this->set_resumable( true );
-				return new WP_Error('bad_response', "Received response code '" . $result['response']['code'] . " " . $result['response']['message'] . "' while trying to resume the upload of file '" . $this->resume_list[$id]['title'] . "'.");
-			}
-			if( isset( $result['headers']['location'] ) )
-				$this->resume_list[$id]['location'] = $result['headers']['location'];
-			$this->resume_list[$id]['pointer'] = $this->pointer( $result['headers']['range'] );
+			return new WP_Error( 'bad_response', "Received response code '" . $result['response']['code'] . " " . $result['response']['message'] . "' while trying to resume the upload of file '" . $file . "'." );
 		}
+		if( isset( $result['headers']['location'] ) )
+			$location = $result['headers']['location'];
+		$pointer = $this->pointer( $result['headers']['range'] );
+
+		$this->file = array(
+			'path'      => $file,
+			'size'      => $size,
+			'location'  => $location,
+			'pointer'   => $pointer
+		);
 
 		// Open file for reading.
-		if ( !$this->file_handle = fopen( $this->resume_list[$id]['path'], "rb" ) )
-			return new WP_Error( 'open_error', "Could not open file '" . $this->resume_list[$id]['path'] . "' for reading." );
+		if ( !$this->file['handle'] = fopen( $file, "rb" ) )
+			return new WP_Error( 'open_error', "Could not open file '" . $file . "' for reading." );
 
 		// Start timer
 		$this->timer['start'] = microtime( true );
 
-		return true;
+		return $location;
 	}
 
 	/**
-	 * Get the ID of the first item found that needs to be resumed.
-	 *
-	 * @access private
-	 * @return mixed   Returns a string representing the ID of the item that needs to be resumed or FALSE if there are no items.
-	 */
-	private function get_resume_item_id() {
-		if ( !isset($this->resume_item_id) ) {
-			if ( !empty($this->resume_list) )
-				foreach ( $this->resume_list as $id => $item )
-					if ( ! $item['used'] ) {
-						$this->resume_item_id = $id;
-						return $id;
-					}
-			return false;
-		}
-		return $this->resume_item_id;
-	}
-
-	/**
-	 * Get the item which is to be resumed.
-	 *
-	 * @access public
-	 * @return mixed  Returns an array with information about the item to be resumed or FALSE if there is no resumable item.
-	 */
-	public function get_resume_item() {
-		if ( false !== $id = $this->get_resume_item_id() )
-			return $this->resume_list[$id];
-		return false;
-	}
-
-	/**
-	 * Work out where the file pointer should be based on the range header.
+	 * Work out where the file pointer should be from the range header.
 	 *
 	 * @access private
 	 * @param  string  $range The range HTTP response header.
@@ -533,20 +466,6 @@ class GDocs {
 	 */
 	private function pointer( $range ) {
 		return intval(substr( $range, strpos( $range, '-' ) + 1 )) + 1;
-	}
-
-	/**
-	 * Set an item as being resumable and unused.
-	 *
-	 * @param  boolean $attempt Should the attempt count be incremented? Defaults to FALSE.
-	 * @return boolean          Returns what update_option returns.
-	 */
-	private function set_resumable( $attempt = false ) {
-		if ( $attempt )
-			$this->resume_list[$this->resume_item_id]['attempt'] ++;
-		$this->resumable = true;
-		$this->resume_list[$this->resume_item_id]['used'] = false;
-		return update_option( 'gdocs_resume', $this->resume_list );
 	}
 
 	/**
@@ -558,84 +477,79 @@ class GDocs {
 	 *                 returns an instance of WP_Error on failure.
 	 */
 	public function upload_chunk() {
-		if ( !isset($this->resume_item_id) )
+		if ( !isset( $this->file['handle'] ) )
 			return new WP_Error( "no_upload", "There is no file being uploaded." );
-		$id = $this->resume_item_id;
-		$cycle_start = microtime(true);
-		fseek( $this->file_handle, $this->resume_list[$id]['pointer'] );
-		$chunk = @fread( $this->file_handle, $this->chunk_size );
-        if ( $chunk === false ) {
-        	$this->set_resumable( true );
-        	return new WP_Error( 'read_error', "Failed to read from file '" . $this->resume_list[$id]['path'] . "'." );
-        }
 
-        $chunk_size = strlen( $chunk );
-        $bytes = 'bytes ' . (string)$this->resume_list[$id]['pointer'] . '-' . (string)($this->resume_list[$id]['pointer'] + $chunk_size - 1) . '/' . (string)$this->resume_list[$id]['size'];
+		$cycle_start = microtime( true );
+		fseek( $this->file['handle'], $this->file['pointer'] );
+		$chunk = @fread( $this->file['handle'], $this->chunk_size );
+		if ( false === $chunk )
+			return new WP_Error( 'read_error', "Failed to read from file '" . $this->resume_list[$id]['path'] . "'." );
 
-        $headers = array( 'Content-Range' => $bytes );
+		$chunk_size = strlen( $chunk );
+		$bytes = 'bytes ' . (string)$this->file['pointer'] . '-' . (string)($this->file['pointer'] + $chunk_size - 1) . '/' . (string)$this->file['size'];
 
-        $result = $this->request( $this->resume_list[$id]['location'], 'PUT', $headers, $chunk );
+		$headers = array( 'Content-Range' => $bytes );
 
-        if ( !is_wp_error( $result ) )
-	        if ( '308' == $result['response']['code'] ) {
-	        	if ( isset( $result['headers']['range'] ) )
-	        		$this->resume_list[$id]['pointer'] = $this->pointer( $result['headers']['range'] );
-	        	else
-	        		$this->resume_list[$id]['pointer'] += $chunk_size;
+		$result = $this->request( $this->file['location'], 'PUT', $headers, $chunk );
 
-	        	if ( isset( $result['headers']['location'] ) )
-	        		$this->resume_list[$id]['location'] = $result['headers']['location'];
+		if ( !is_wp_error( $result ) )
+			if ( '308' == $result['response']['code'] ) {
+				if ( isset( $result['headers']['range'] ) )
+					$this->file['pointer'] = $this->pointer( $result['headers']['range'] );
+				else
+					$this->file['pointer'] += $chunk_size;
 
-	        	if ( $this->timer['cycle'] )
-	        		$this->timer['cycle'] = ( microtime( true ) - $cycle_start + $this->timer['cycle'] ) / 2;
-	        	else
-	        		$this->timer['cycle'] = microtime(true) - $cycle_start;
+				if ( isset( $result['headers']['location'] ) )
+					$this->file['location'] = $result['headers']['location'];
 
-	        	if ( $this->approaching_timeout() ) {
-	        		$this->set_resumable();
-	        		return new WP_Error('timeout', "The upload process timed out but can be resumed.");
-	        	}
-	        	return true;
-	        }
-	        elseif ( '201' == $result['response']['code'] ) {
-	        	fclose( $this->file_handle );
+				if ( $this->timer['cycle'] )
+					$this->timer['cycle'] = ( microtime( true ) - $cycle_start + $this->timer['cycle'] ) / 2;
+				else
+					$this->timer['cycle'] = microtime(true) - $cycle_start;
+
+				if ( $this->approaching_timeout() )
+					return new WP_Error('timeout', "The upload process timed out but can be resumed.");
+				return $this->file['location'];
+			}
+			elseif ( '201' == $result['response']['code'] ) {
+				fclose( $this->file['handle'] );
 
 				// Stop timer
 				$this->timer['stop'] = microtime(true);
 				$this->timer['delta'] = $this->timer['stop'] - $this->timer['start'];
 
 				if ( $this->timer['cycle'] )
-	        		$this->timer['cycle'] = ( microtime( true ) - $cycle_start + $this->timer['cycle'] ) / 2;
-	        	else
-	        		$this->timer['cycle'] = microtime(true) - $cycle_start;
+					$this->timer['cycle'] = ( microtime( true ) - $cycle_start + $this->timer['cycle'] ) / 2;
+				else
+					$this->timer['cycle'] = microtime(true) - $cycle_start;
 
-				unset( $this->resume_item_id );
-				unset( $this->resume_list[$id] );
-				update_option( 'gdocs_resume', $this->resume_list );
+				$this->file['pointer'] = $this->file['size'];
 
 				$feed = @simplexml_load_string( $result['body'] );
 				if ( $feed === false )
 					return new WP_Error( 'invalid_data', "Could not create SimpleXMLElement from '" . $result['body'] . "'." );
-				return substr( ( string ) $feed->children( "http://schemas.google.com/g/2005" )->resourceId, 5 );
-	        }
+				$this->file['id'] = substr( ( string ) $feed->children( "http://schemas.google.com/g/2005" )->resourceId, 5 );
+				return true;
+			}
 
-        // If we got to this point it means the upload wasn't successful.
-        fclose( $this->file_handle );
-
-        // Give up if we tried to resume too many times
-        if ( $this->resume_list[$id]['attempt'] >= $this->max_resume_attempts ) {
-        	$temp = $this->resume_list[$id];
-        	unset( $this->resume_item_id );
-        	unset( $this->resume_list[$id] );
-			update_option( 'gdocs_resume', $this->resume_list );
-			return new WP_Error( 'permanent_fail', "The upload of file '" . $temp['path'] . "' failed after trying " . $temp['attempt'] . " times." );
-		}
-
-		// Mark resumable upload
-		$this->set_resumable( true );
+		// If we got to this point it means the upload wasn't successful.
+		fclose( $this->file['handle'] );
 		if ( is_wp_error( $result ) )
 			return $result;
-	    return new WP_Error( 'bad_response', "Received response code '" . $result['response']['code'] . " " . $result['response']['message'] . "' while trying to upload a chunk of file '" . $this->resume_list[$id]['title'] . "'. The upload might be resumable." );
+		return new WP_Error( 'bad_response', "Received response code '" . $result['response']['code'] . " " . $result['response']['message'] . "' while trying to upload a file chunk." );
+	}
+
+	/**
+	 * Get the resource ID of the most recent uploaded file.
+	 *
+	 * @access public
+	 * @return string The ID of the uploaded file or an empty string.
+	 */
+	public function get_file_id() {
+		if ( isset( $this->file['id'] ) )
+			return $this->file['id'];
+		return '';
 	}
 
 	/**
@@ -646,7 +560,10 @@ class GDocs {
 	 */
 	public function get_upload_speed() {
 		if ( $this->timer['cycle'] > 0 )
-			return $this->chunk_size / $this->timer['cycle'];
+			if ( $this->file['size'] < $this->chunk_size )
+				return $this->file['size'] / $this->timer['cycle'];
+			else
+				return $this->chunk_size / $this->timer['cycle'];
 		return 0;
 	}
 
@@ -656,19 +573,9 @@ class GDocs {
 	 * @return float Returns a percentage on success, 0 on failure.
 	 */
 	public function get_upload_percentage() {
-		if ( isset( $this->resume_item_id ) )
-			return $this->resume_list[$this->resume_item_id]['pointer'] * 100 / $this->resume_list[$this->resume_item_id]['size'];
+		if ( isset( $this->file['path'] ) )
+			return $this->file['pointer'] * 100 / $this->file['size'];
 		return 0;
-	}
-
-	/**
-	 * Find out if a failed upload is resumable.
-	 *
-	 * @access public
-	 * @return boolean Returns TRUE if a failed upload is resumable, FALSE otherwise.
-	 */
-	public function is_resumable() {
-		return $this->resumable;
 	}
 
 	/**
