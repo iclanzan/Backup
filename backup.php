@@ -310,9 +310,10 @@ class Backup {
 		add_filter( 'plugin_action_links', array( &$this, 'action_links' ), 10, 2 );
 
 		// Disable unwanted HTTP transports.
-		foreach ( $this->http_transports as $t )
-			if ( !in_array( $t, $this->options['enabled_transports'] ) )
-				add_filter( 'use_' . $t . '_transport', '__return_false' );
+		if ( isset( $this->options['enabled_transports'] ) )
+			foreach ( $this->http_transports as $t )
+				if ( !in_array( $t, $this->options['enabled_transports'] ) )
+					add_filter( 'use_' . $t . '_transport', '__return_false' );
 
 		// Add 'Backup' to the Settings admin menu; save default metabox layout in the database.
 		add_action( 'admin_menu', array( &$this, 'backup_menu' ) );
