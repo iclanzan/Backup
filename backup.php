@@ -1089,6 +1089,381 @@ class Backup {
 		if ( isset( $_GET['backup'] ) && $this->options['backup_token'] == $_GET['backup'] ) {
 			echo '<!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Backup Process</title><link rel="stylesheet" id="install-css"  href="http://songpane.com/wp-admin/css/install.css" type="text/css" media="all" /></head><body><style>p{font-family:monospace;border-radius:3px;padding:3px;margin:6px 0}.warning{background:#ffec8b;border:1px solid #fc0}.error{background:#ffa0a0;border:1px solid #f04040}#progress{width:400px;height:30px;margin:5px auto;border:1px solid #dfdfdf;background:#f9f9f9;padding:1px;overflow:hidden}span{background:#fc0;display:inline-block;height:30px}</style><h1 id="logo">Backup Process</h1>';
+<<<<<<< HEAD
+            if ( isset( $_GET['resume'] ) )
+                $this->backup_resume();
+            else
+                $this->do_backup();
+            echo '</body></html>';
+            exit;
+        }
+    }
+
+    function always_flush() {
+        if( !isset( $this->$flushed ) ) {
+            // All this is needed in order that every echo gets sent to the browser.
+            // Code taken from php.net user contributed notes.
+            @apache_setenv('no-gzip', 1);
+            @ini_set('zlib.output_compression', 0);
+            @ini_set('implicit_flush', 1);
+            wp_ob_end_flush_all();
+            ob_implicit_flush(1);
+            $this->flushed = true;
+        }
+    }
+
+    /**
+     * Initiates the backup procedure.
+     */
+    public function do_backup() {
+        $this->log_file = $this->local_folder . '/' . $this->time . '.log';
+        $this->always_flush();
+
+        // Check if the backup folder is writable
+        if ( !( @is_writable($this->local_folder) ) ) {
+            $this->log('ERROR', "The directory '" . $this->local_folder . "' does not exist or it is not writable.");
+            exit;
+        }
+
+        // Measure the time this function takes to complete.
+        $start = microtime(true);
+        // Get the memory usage before we do anything.
+        $initial_memory = memory_get_usage(true);
+        // We might need a lot of memory for this
+        @ini_set('memory_limit', apply_filters('admin_memory_limit', WP_MAX_MEMORY_LIMIT));
+        // Set the time limit. It might be needed for the archive creation process.
+        @set_time_limit($this->options['time_limit']);
+
+        $file_name = $this->time . '.zip';
+        $file_path = $this->local_folder . '/' . $file_name;
+
+        // Create database dump sql file.
+        if ( in_array('database', $this->options['source_list']) ) {
+            $this->log('NOTICE', "Attempting to dump database.");
+            $dump_time = db_dump($this->dump_file);
+
+            if ( is_wp_error($dump_time) ) {
+                $this->log_wp_error($dump_time);
+                exit;
+            }
+
+            $this->log('NOTICE', "The database dump was completed successfully in " . round($dump_time, 2) . " seconds.");
+        }
+
+        $exclude = array_merge($this->options['exclude_list'], $this->exclude);
+        foreach ( $exclude as $i => $path )
+            if ( false !== strpos( $path, '/' ) || false !== strpos( $path, "\\" ) )
+                $exclude[$i] = absolute_path($path, ABSPATH);
+
+        $sources = array();
+        foreach ( $this->options['source_list'] as $source )
+            $sources[] = $this->sources[$source]['path'];
+
+        // Remove subdirectories.
+        $count = count($sources);
+        for ( $i = 0; $i < $count; $i++ )
+            for ( $j = 0; $j < $count; $j++ )
+                if ( $j != $i && isset($sources[$i]) && isset($sources[$j]) &&
+                    is_subdir($sources[$j], $sources[$i]) && $this->sources['database']['path'] != $sources[$j] )
+                    unset($sources[$j]);
+
+        $include = $this->options['include_list'];
+        foreach ( $include as $i => $path )
+            $include[$i] = absolute_path( $path, ABSPATH );
+
+        $sources = array_merge( $sources, $include );
+
+        // Create archive from all enabled sources.
+        $this->log('NOTICE', "Attempting to create archive '" . $file_path . "'.");
+        $zip_time = zip($sources, $file_path, $exclude);
+
+        if ( is_wp_error($zip_time) ) {
+            $this->log_wp_error($zip_time);
+            exit;
+        }
+
+        $this->log('NOTICE', 'Archive created successfully in ' . round($zip_time, 2) . ' seconds. Archive file size is ' . size_format( filesize( $file_path ) ) . '.');
+        delete_path($this->dump_file);
+
+        if ( $this->options['drive_number'] > 0 && $this->goauth->is_authorized() ) {
+            if ( is_wp_error( $e = $this->need_gdocs() ) ) {
+                delete_path( $file_path );
+                $this->log_wp_error( $e );
+                exit;
+            }
+            $this->log('NOTICE', 'Attempting to upload archive to Google Drive.');
+            if ( is_wp_error( $e = $this->gdocs->prepare_upload( $file_path, $file_name, $this->options['drive_folder'] ) ) ) {
+                $this->log_wp_error($e);
+                delete_path( $file_path );
+                exit;
+            }
+            $this->backup_resume();
+        }
+        else {
+            $this->options['local_files'][] = $file_path;
+            $this->options['last_backup'] = $this->time;
+            $this->purge_local_files();
+            // Update options in the database.
+            update_option('backup_options', $this->options);
+        }
+
+        // Get memory peak usage.
+        $peak_memory = memory_get_peak_usage(true);
+        $this->log('NOTICE', 'Backup process completed in ' . round(microtime(true) - $start, 2) . ' seconds. Initial PHP memory usage was ' . size_format( $initial_memory, 2 ) . ' and the backup process used another ' . size_format( $peak_memory - $initial_memory, 2 ) .' of RAM.');
+    }
+
+    /**
+     * Resumes an interrupted backup upload.
+     */
+    public function backup_resume() {
+        $this->always_flush();
+        if ( is_wp_error( $e = $this->need_gdocs()) ) {
+            $this->log_wp_error( $e );
+            exit;
+        }
+
+        $file = $this->gdocs->get_resume_item();
+        if ( false === $file ) {
+            $this->log("WARNING", "There is no upload to resume.");
+            exit;
+        }
+
+        $this->log_file = $this->local_folder . '/' . substr( $file['path'], -14, 10 ) . '.log';
+
+        $id = $this->gdocs->resume_upload();
+        if ( true === $id ) {
+            $this->log('NOTICE', "Uploading file '" . $file['title'] . "'.");
+            $d = 0;
+            echo '<div id="progress">';
+            do {
+                if ( is_string( $id = $this->gdocs->upload_chunk() ) )
+                    $p = 100;
+                else
+                    $p = $this->gdocs->get_upload_percentage();
+                if ( $p - $d >= 1 ) {
+                    $b = intval($p - $d);
+                    echo '<span style="width:' . $b . '%"></span>';
+                    $d += $b;
+                }
+            } while ( true === $id );
+            echo '</div>';
+        }
+
+        if ( is_wp_error($id) ) {
+            if ( $this->gdocs->is_resumable() ) {
+                $mess = $id->get_error_message();
+                if ( $percent = $this->gdocs->get_upload_percentage() )
+                    $mess .= ' Managed to upload ' . round( $percent, 2 ) . '% of the file.';
+                if ( $speed = size_format( $this->gdocs->get_upload_speed() ) )
+                    $mess .= ' The upload speed was ' . $speed . '/s.';
+                $this->log("WARNING", $mess );
+                wp_schedule_single_event($this->time, 'backup_resume');
+                exit;
+            }
+
+            $this->log_wp_error($id);
+            delete_path( $file['path'] );
+            exit;
+        }
+
+        $this->log('NOTICE', "Archive '" . $file['title'] . "' was successfully uploaded to Google Drive in " . round($this->gdocs->time_taken(), 2) . " seconds at an upload speed of " . size_format( $this->gdocs->get_upload_speed() ) . "/s.");
+        $this->options['local_files'][] = $file['path'];
+        $this->options['drive_files'][] = $id;
+        $this->options['last_backup'] = substr($file['title'], 0, strpos($file['title'], '.')); // take the time from the title
+        // Update quotas if uploading to Google Drive was successful.
+        $this->update_quota();
+        $this->purge_local_files();
+        $this->purge_drive_files();
+        // Updating options in the database.
+        update_option('backup_options', $this->options);
+    }
+
+    private function need_gdocs() {
+        if ( ! is_gdocs($this->gdocs) ) {
+            if ( ! $this->goauth->is_authorized() )
+                return new WP_Error( "not_authorized", "Account is not authorized." );
+
+            $access_token = $this->goauth->get_access_token();
+            if ( is_wp_error($access_token) ) {
+                return $access_token;
+            }
+
+            $this->gdocs = new GDocs($access_token);
+            $this->gdocs->set_option('chunk_size', $this->options['chunk_size']);
+            $this->gdocs->set_option('time_limit', $this->options['time_limit']);
+            $this->gdocs->set_option('request_timeout', $this->options['request_timeout']);
+        }
+        return true;
+    }
+
+    /**
+     * Purge Google Drive backup files.
+     */
+    private function purge_drive_files() {
+        if ( is_gdocs($this->gdocs) )
+            while ( count($this->options['drive_files']) > $this->options['drive_number'] ) {
+                $result = $this->gdocs->delete_resource($r = array_shift($this->options['drive_files']));
+                if ( is_wp_error($result) )
+                    $this->log_wp_error($result);
+                else
+                    $this->log('NOTICE', "Deleted Google Drive file '" . $r . "'.");
+            }
+        return new WP_Error('missing_gdocs', "An instance of GDocs is needed to delete Google Drive resources.");
+    }
+
+    /**
+     * Purge local filesystem backup files.
+     */
+    private function purge_local_files() {
+        while ( count($this->options['local_files']) > $this->options['local_number'] )
+            if ( delete_path($f = array_shift($this->options['local_files'])) ) {
+                $this->log('NOTICE', "Purged backup file '" . $f . "'.");
+                delete_path( $g = substr( $f, 0, strlen( $f ) - 4 ) . '.log' );
+            }
+            else
+                $this->log('WARNING', "Could not delete file '" . $f . "'.");
+    }
+
+    /**
+     * Updates used and total quota.
+     */
+    private function update_quota() {
+        if ( is_gdocs($this->gdocs) ) {
+            $quota_used = $this->gdocs->get_quota_used();
+            if ( is_wp_error($quota_used) )
+                $this->log_wp_error($quota_used);
+            else
+                $this->options['quota_used'] = $quota_used;
+
+            $quota_total = $this->gdocs->get_quota_total();
+            if ( is_wp_error($quota_total) )
+                $this->log_wp_error($quota_total);
+            else
+                $this->options['quota_total'] = $quota_total;
+        }
+        else return new WP_Error('missing_gdocs', "An instance of GDocs is needed to update quota usage.");
+    }
+
+    /**
+     * Renders messages.
+     */
+    private function get_messages_html() {
+        $ret = '';
+        foreach( $this->messages as $type => $messages )
+            $ret .= '<div class="' . $type . '">';
+            foreach ( $messages as $message )
+                $ret .= '<p>' . $message . '</p>';
+            $ret .= '</div>';
+        }
+        return $ret;
+    }
+
+    /**
+     * Checks if the authorization/authentication page is requested.
+     *
+     * @return boolean Returns TRUE if the authorization page is requested, FALSE otherwise.
+     */
+    function is_auth() {
+        return ( isset( $_GET['page'] ) && 'backup' == $_GET['page'] && isset( $_GET['action'] ) && 'auth' == $_GET['action']);
+    }
+
+    /**
+     * Handles Google OAuth2 requests
+     */
+    function auth() {
+        if ( isset($_GET['state']) ) {
+            if ( 'token' == $_GET['state'] ) {
+                $refresh_token = $this->goauth->request_refresh_token();
+                if ( is_wp_error($refresh_token) ) {
+                    $this->messages['error'][] = __("Authorization failed!", $this->text_domain);
+                    $this->messages['error'][] = $refresh_token->get_error_message();
+                }
+                else {
+                    $this->options['refresh_token'] = $refresh_token;
+                    $this->messages['updated'][] = __("Authorization was successful.", $this->text_domain);
+
+                    // Authorization was successful, so create an instance of GDocs and update quota.
+                    $this->gdocs = new GDocs($this->goauth->get_access_token());
+                    $result = $this->update_quota();
+                    // Request and set user_info
+                    $this->set_user_info();
+                    update_option('backup_options', $this->options);
+                }
+            }
+            elseif ( 'revoke' == $_GET['state'] ) {
+                $result = $this->goauth->revoke_refresh_token();
+                if ( is_wp_error($result) ) {
+                    $this->messages['error'][] = __("Could not revoke authorization!", $this->text_domain);
+                    $this->messages['error'][] = $result->get_error_message();
+                }
+                else {
+                    $this->options['refresh_token'] = '';
+                    update_option('backup_options', $this->options);
+                    $this->messages['updated'][] = __("Authorization has been revoked.", $this->text_domain);
+                }
+            }
+        }
+        else {
+            if ( !isset($_POST['client_id']) || !isset($_POST['client_secret']) )
+                $this->messages['error'][] = __("You need to specify a 'Client ID' and a 'Client secret' in order to authorize the Backup plugin.", $this->text_domain);
+            else {
+                $this->options['client_id'] = $_POST['client_id'];
+                $this->options['client_secret'] = $_POST['client_secret'];
+                update_option('backup_options', $this->options);
+                $this->goauth = new GOAuth($this->options['client_id'], $this->options['client_secret'], $this->redirect_uri);
+                $res = $this->goauth->request_authorization($this->scope, 'token');
+                if ( is_wp_error($res) )
+                    $this->messages['error'][] = $res->get_error_message();
+                exit;
+            }
+        }
+    }
+
+    function set_user_info() {
+        if ( is_wp_error( $result = wp_remote_get( 'https://www.googleapis.com/oauth2/v1/userinfo?access_token=' . $this->goauth->get_access_token() ) ) )
+            return;
+        if ( '200' != $result['response']['code'] )
+            return;
+        $result = json_decode( $result['body'], true );
+        $this->options['user_info'] = array(
+            'email'   => $result['email'],
+            'name'    => $result['name'],
+            'picture' => $result['picture']
+        );
+    }
+
+    /**
+     * Sends the first error message from a WP_Error to be written to log.
+     * @param  WP_Error $wp_error Instance of WP_Error.
+     * @return boolean            Returns TRUE on success, FALSE on failure.
+     */
+    function log_wp_error( $wp_error ) {
+        if ( is_wp_error($wp_error) ) {
+            return $this->log('ERROR', $wp_error->get_error_message() . ' (' . $wp_error->get_error_code() . ')');
+        }
+        return false;
+    }
+
+    /**
+     * Custom logging function for the backup plugin.
+     *
+     * @param  string $type    Type of message that we are logging. Should be 'NOTICE', 'WARNING' or 'ERROR'.
+     * @param  string $message The message we are logging.
+     * @return boolean         Returns TRUE on success, FALSE on failure.
+     */
+    function log( $type, $message ) {
+        $part = '<p';
+        if ( 'WARNING' == $type )
+            $part .= ' class="warning">';
+        elseif ( 'ERROR' == $type )
+            $part .= ' class="error">';
+        else
+            $part .= '>';
+        $part .= $message . '</p>';
+        echo $part;
+        return error_log(date("Y-m-d\tH:i:s") . "\t" . $type . "\t" . $message . "\n", 3, $this->log_file);
+    }
+=======
 			if ( isset( $_GET['retry'] ) )
 				$this->retry_backup();
 			else
@@ -1637,6 +2012,7 @@ class Backup {
 		echo $part;
 		return error_log( date_i18n( "Y-m-d\tH:i:s" ) . "\t" . $type . "\t" . $message . "\n", 3, $this->log_file );
 	}
+>>>>>>> e545d829e7ec23cbe3551d20dd2763ce56594c9e
 }
 
 $backup = new Backup();
