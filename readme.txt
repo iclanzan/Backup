@@ -4,7 +4,7 @@ Donate link: http://hel.io/donate/
 Tags: backup, back up, Google Drive, Drive backup, WordPress backup
 Requires at least: 3.4
 Tested up to: 3.4.1
-Stable tag: 2.1
+Stable tag: 2.1.1
 License: GPLv3
 License URI: http://www.gnu.org/licenses/gpl.html
 
