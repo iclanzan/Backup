@@ -409,8 +409,10 @@ class Backup {
 
 		// Set the backup token here, because in the constructor 'wp_generate_password()' is not defined.
 		$this->options['backup_token'] = wp_generate_password( 12, false );
-		if ( empty( $this->options['local_folder'] ) )
-			$this->options['local_folder'] = relative_path( ABSPATH, WP_CONTENT_DIR . '/' . $this->options['backup_token'] );
+		if ( empty( $this->options['local_folder'] ) ) {
+			$this->local_folder = WP_CONTENT_DIR . '/' . $this->options['backup_token'];
+			$this->options['local_folder'] = relative_path( ABSPATH, $this->local_folder );
+		}
 
 		if ( $this->goauth->is_authorized() )
 			$this->set_user_info();
