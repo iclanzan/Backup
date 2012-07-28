@@ -491,7 +491,10 @@ class Backup {
 	 * It gets triggered when the plugin version is different than the one stored in the database.
 	 */
 	function upgrade() {
-		if ( !isset( $this->options['plugin_version'] ) || $this->options['plugin_version'] < $this->version ) {
+		if (
+			!isset( $this->options['plugin_version'] ) ||
+			version_compare( $this->options['plugin_version'], '2.1', '<' )
+		) {
 			$this->options['backup_token']        = wp_generate_password( 12, false );
 			$this->options['backup_title']        = get_bloginfo( 'name' );
 			$this->options['include_list']        = array();
