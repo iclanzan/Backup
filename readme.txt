@@ -4,7 +4,7 @@ Donate link: http://hel.io/donate/
 Tags: backup, back up, Google Drive, Drive backup, WordPress backup
 Requires at least: 3.4
 Tested up to: 3.4.1
-Stable tag: 2.1.1
+Stable tag: 2.1.2
 License: GPLv3
 License URI: http://www.gnu.org/licenses/gpl.html
 
@@ -57,6 +57,10 @@ Apart from not being able to purge backups from Google Drive, Backup should work
 1. Screenshot of the Backup settings page.
 
 == Changelog ==
+
+= 2.1.2 =
+* Fixed a bug that was causing Backup to not work on most shared hosts.
+* Fixed a bug that was causing the initial backup directory not to be created.
 
 = 2.1 =
 * Added field to enter specific paths to include in the backup.

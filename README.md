@@ -37,6 +37,10 @@ If you need support configuring the plugin click on the `help` button on the top
 
 ## Changelog
 
+**2.1.2**
+- Fixed a bug that was causing Backup to not work on most shared hosts.
+- Fixed a bug that was causing the initial backup directory not to be created.
+
 **2.1**
 - Added field to enter specific paths to include in the backup.
 - Added ability to specify the day of the week and and the time when to schedule the first backup.
