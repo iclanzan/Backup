@@ -364,7 +364,6 @@ class Backup {
 			@ini_set( 'memory_limit', apply_filters( 'admin_memory_limit', WP_MAX_MEMORY_LIMIT ) );
 			ignore_user_abort( true ); // Allow the script to run after the user closes the window.
 			// All this is needed in order that every echo gets sent to the browser.
-			@apache_setenv( 'no-gzip', 1 );
 			@ini_set( 'zlib.output_compression', 0 );
 			@ini_set( 'implicit_flush', 1 );
 			wp_ob_end_flush_all();
