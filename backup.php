@@ -1,7 +1,7 @@
 <?php
 /*
 Plugin Name: Backup
-Version: 2.1.2
+Version: 2.1.3
 Plugin URI: http://hel.io/wordpress/backup/
 Description: Back up your WordPress website to Google Drive.
 Author: Sorin Iclanzan
@@ -218,7 +218,7 @@ class Backup {
 	function __construct() {
 		global $timestart;
 
-		$this->version = '2.1';
+		$this->version = '2.1.3';
 		$this->time = intval( $timestart );
 		$this->plugin_dir = dirname( plugin_basename( __FILE__ ) );
 		$this->text_domain = 'backup';
@@ -1209,6 +1209,8 @@ class Backup {
 				$file_name
 			) );
 
+			if ( ! phpversion( 'zip' ) )
+				define( 'PCLZIP_TEMPORARY_DIR', $this->local_folder );
 			if ( is_wp_error( $zip = zip( $sources, $file_path, $exclude ) ) ) {
 				$this->log_wp_error( $zip );
 				delete_path( $this->dump_file );

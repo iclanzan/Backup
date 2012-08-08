@@ -155,6 +155,12 @@ function _zip_create_ziparchive( $sources, $destination, $exclude = array() ) {
 			continue;
 		if ( @is_dir( $source ) ) {
 			$files = directory_list( $source, true, $exclude );
+			if ( is_wp_error( $files ) ) {
+				$zip->unchangeAll();
+				if ( file_exists( $destination ) )
+					delete_path( $destination );
+				return $files;
+			}
 			foreach ( $files as $file ) {
 				if ( ! @is_readable( $file ) )
 					continue;
@@ -185,7 +191,7 @@ if ( !function_exists('_zip_create_pclzip') ) :
  * @param  array  $sources     List of paths to files and directories to be archived.
  * @param  string $destination Destination file where the archive will be stored.
  * @param  array  $exclude     Directories and/or files to exclude from archive, defaults to empty array.
- * @return mixed               Returns TRUE on success or an instance of WP_Error on failure.]              [description]
+ * @return mixed               Returns TRUE on success or an instance of WP_Error on failure.
  */
 function _zip_create_pclzip( $sources, $destination, $exclude = array() ) {
 	require_once( ABSPATH . 'wp-admin/includes/class-pclzip.php' );
@@ -195,6 +201,10 @@ function _zip_create_pclzip( $sources, $destination, $exclude = array() ) {
 			continue;
 		if ( @is_dir( $source ) ) {
 			$files = directory_list( $source, true, $exclude );
+			if ( is_wp_error( $files ) ) {
+				delete_path( $destination );
+				return $files;
+			}
 			$res = $zip->add( $files, PCLZIP_OPT_REMOVE_PATH, parent_dir( $source ) );
 			if ( 0 == $res )
 				return new WP_Error( 'pclzip', $zip->errorInfo( true ) );
