@@ -1317,6 +1317,8 @@ class Backup {
 				) );
 			$this->options['backup_list'][$id]['drive_id'] = $this->gdocs->get_file_id();
 			$this->update_quota();
+			if ( empty( $this->options['user_info'] ) )
+				$this->set_user_info();
 		}
 		$this->options['backup_list'][$id]['status'] = 1;
 		$this->purge_backups();
