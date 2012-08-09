@@ -336,7 +336,7 @@ if ( !function_exists( 'absolute_path' ) ) :
 function absolute_path( $path, $base ) {
 	$path = path_join( $base, $path );
 	$path = str_replace( '\\', '/', $path );
-	$path = str_replace( '/./', '/', $path );
+	$path = str_replace( array( '/./', '//' ), '/', $path );
 
 	$pattern = '#\w+/\.\./#';
 	while( preg_match($pattern, $path) )
