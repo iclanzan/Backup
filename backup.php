@@ -291,15 +291,15 @@ class Backup {
 		if ( defined( 'BACKUP_DRIVE_FOLDER' ) )  $this->options['drive_folder']  = BACKUP_DRIVE_FOLDER;
 		if ( defined( 'BACKUP_CLIENT_ID' ) )     $this->options['client_id']     = BACKUP_CLIENT_ID;
 		if ( defined( 'BACKUP_CLIENT_SECRET' ) ) $this->options['client_secret'] = BACKUP_CLIENT_SECRET;
-		if ( defined( 'BACKUP_LOCAL_FOLDER' ) )  {
-			$this->options['local_folder']  = BACKUP_LOCAL_FOLDER;
+		if ( defined( 'BACKUP_LOCAL_FOLDER' ) )  $this->options['local_folder']  = BACKUP_LOCAL_FOLDER;
+
+		$this->local_folder = absolute_path( $this->options['local_folder'], ABSPATH );
+
+		if ( defined( 'BACKUP_LOCAL_FOLDER' ) )
 			if ( wp_mkdir_p( $this->local_folder ) )
 				if ( !@is_file( $this->local_folder . "/.htaccess" ) )
 					file_put_contents( $this->local_folder . "/.htaccess", "Order allow,deny\nDeny from all" );
-		}
 
-
-		$this->local_folder = absolute_path( $this->options['local_folder'], ABSPATH );
 		$this->dump_file = $this->local_folder . '/dump.sql';
 		$upload_dir = wp_upload_dir();
 
@@ -1101,7 +1101,14 @@ class Backup {
 	function manual_backup() {
 		if ( isset( $_GET['backup'] ) && $this->options['backup_token'] == $_GET['backup'] ) {
 			echo '<!DOCTYPE html>
-<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Backup Process</title><link rel="stylesheet" id="install-css"  href="http://songpane.com/wp-admin/css/install.css" type="text/css" media="all" /></head><body><style>p{font-family:monospace;border-radius:3px;padding:3px;margin:6px 0}.warning{background:#ffec8b;border:1px solid #fc0}.error{background:#ffa0a0;border:1px solid #f04040}#progress{width:400px;height:30px;margin:5px auto;border:1px solid #dfdfdf;background:#f9f9f9;padding:1px;overflow:hidden}span{background:#fc0;display:inline-block;height:30px}</style><h1 id="logo">Backup Process</h1>';
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US">
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+		<title>' . __( 'Backup Process', $this->text_domain ) . '</title>
+		<link rel="stylesheet" id="install-css"  href="' . site_url( 'wp-admin/css/install.css' ) . '" type="text/css" media="all" />
+		<style>p{font-family:monospace;border-radius:3px;padding:3px;margin:6px 0}.warning{background:#ffec8b;border:1px solid #fc0}.error{background:#ffa0a0;border:1px solid #f04040}#progress{width:400px;height:30px;margin:5px auto;border:1px solid #dfdfdf;background:#f9f9f9;padding:1px;overflow:hidden}span{background:#fc0;display:inline-block;height:30px}</style>
+	</head>
+	<body><h1 id="logo">' . __( 'Backup Process', $this->text_domain ) . '</h1>';
 			if ( isset( $_GET['retry'] ) )
 				$this->retry_backup();
 			else
@@ -1227,7 +1234,7 @@ class Backup {
 			}
 			delete_path( $this->dump_file );
 			$this->log( 'NOTICE', sprintf(
-				__( 'Successfully archived %1$s files in %2$s seconds. Archive file size is %3$s.', $text_domain ),
+				__( 'Successfully archived %1$s files in %2$s seconds. Archive file size is %3$s.', $this->text_domain ),
 				number_format_i18n( $zip['count'] ),
 				number_format_i18n( $zip['time'], 3 ),
 				size_format( filesize( $file_path ), 2 )
