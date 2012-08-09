@@ -254,17 +254,17 @@ class Backup {
 			$this->options = array(
 				'plugin_version'      => $this->version,
 				'backup_token'        => '',
-				'refresh_token'       => defined( 'BACKUP_REFRESH_TOKEN' ) ? BACKUP_REFRESH_TOKEN : '',
+				'refresh_token'       => '',
 				'backup_title'        => get_bloginfo( 'name' ),
-				'local_folder'        => defined( 'BACKUP_LOCAL_FOLDER' ) ? BACKUP_LOCAL_FOLDER : '',
-				'drive_folder'        => defined( 'BACKUP_DRIVE_FOLDER' ) ? BACKUP_DRIVE_FOLDER : '',
+				'local_folder'        => '',
+				'drive_folder'        => '',
 				'backup_frequency'    => 'never',
 				'source_list'         => array( 'database', 'content', 'uploads', 'plugins' ),
 				'exclude_list'        => array( '.svn', '.git', '.DS_Store' ),
 				'include_list'        => array(),
 				'backup_list'         => array(),
-				'client_id'           => defined( 'BACKUP_CLIENT_ID' ) ? BACKUP_CLIENT_ID : '',
-				'client_secret'       => defined( 'BACKUP_CLIENT_SECRET' ) ? BACKUP_CLIENT_SECRET : '',
+				'client_id'           => '',
+				'client_secret'       => '',
 				'local_number'        => 1,
 				'drive_number'        => 10,
 				'quota_total'         => '',
@@ -285,6 +285,19 @@ class Backup {
 				version_compare( $this->version, $this->options['plugin_version'], '>' )
 			)
 				add_action( 'init', array( &$this, 'upgrade' ), 1 );
+
+		// Allow some options to be overwritten from the config file.
+		if ( defined( 'BACKUP_REFRESH_TOKEN' ) ) $this->options['refresh_token'] = BACKUP_REFRESH_TOKEN;
+		if ( defined( 'BACKUP_DRIVE_FOLDER' ) )  $this->options['drive_folder']  = BACKUP_DRIVE_FOLDER;
+		if ( defined( 'BACKUP_CLIENT_ID' ) )     $this->options['client_id']     = BACKUP_CLIENT_ID;
+		if ( defined( 'BACKUP_CLIENT_SECRET' ) ) $this->options['client_secret'] = BACKUP_CLIENT_SECRET;
+		if ( defined( 'BACKUP_LOCAL_FOLDER' ) )  {
+			$this->options['local_folder']  = BACKUP_LOCAL_FOLDER;
+			if ( wp_mkdir_p( $this->local_folder ) )
+				if ( !@is_file( $this->local_folder . "/.htaccess" ) )
+					file_put_contents( $this->local_folder . "/.htaccess", "Order allow,deny\nDeny from all" );
+		}
+
 
 		$this->local_folder = absolute_path( $this->options['local_folder'], ABSPATH );
 		$this->dump_file = $this->local_folder . '/dump.sql';
@@ -507,20 +520,6 @@ class Backup {
 			$this->options['user_info']           = array();
 			$this->options['backup_list']         = array();
 
-			if ( ! $this->goauth->is_authorized() ) {
-				if ( defined( 'BACKUP_CLIENT_ID' ) ) {
-					$this->options['client_id'] = BACKUP_CLIENT_ID;
-					$this->goauth->set_option( 'client_id', $this->options['client_id'] );
-				}
-				if ( defined( 'BACKUP_CLIENT_SECRET' ) ) {
-					$this->options['client_secret'] = BACKUP_CLIENT_SECRET;
-					$this->goauth->set_option( 'client_secret', $this->options['client_secret'] );
-				}
-				if ( defined( 'BACKUP_REFRESH_TOKEN' ) ) {
-					$this->options['refresh_token'] = BACKUP_REFRESH_TOKEN;
-					$this->goauth->set_option( 'refresh_token', $this->options['refresh_token'] );
-				}
-			}
 			if ( $this->goauth->is_authorized() )
 				$this->set_user_info();
 
@@ -720,15 +719,15 @@ class Backup {
 			<p><?php _e('Before backups can be uploaded to Google Drive, you need to authorize the plugin and give it permission to make changes on your behalf.', $this->text_domain ); ?></p>
 			<p>
 				<label for="client_id"><?php _e( 'Client ID', $this->text_domain ); ?></label>
-				<input id="client_id" name="client_id" type='text' class="large-text" value='<?php echo esc_html( $this->options['client_id'] ); ?>' />
+				<input id="client_id" name="client_id" type='text' <?php __checked_selected_helper( defined( 'BACKUP_CLIENT_ID' ), true, true, 'readonly' ); ?> class="large-text" value='<?php echo esc_html( $this->options['client_id'] ); ?>' />
 			</p>
 			<p>
 				<label for="client_secret"><?php _e( 'Client secret', $this->text_domain ); ?>
-				<input id="client_secret" name='client_secret' type='text' class="large-text" value='<?php echo esc_html( $this->options['client_secret'] ); ?>' />
+				<input id="client_secret" name='client_secret' type='text' <?php __checked_selected_helper( defined( 'BACKUP_CLIENT_SECRET' ), true, true, 'readonly' ); ?> class="large-text" value='<?php echo esc_html( $this->options['client_secret'] ); ?>' />
 			</p>
 			<p class="para hide-if-js">
 				<label for="refresh_token"><?php _e( 'Refresh token', $this->text_domain ); ?>
-				<input id="refresh_token" name='refresh_token' type='text' class="large-text" value='<?php echo esc_html( $this->options['refresh_token'] ); ?>' />
+				<input id="refresh_token" name='refresh_token' type='text' <?php __checked_selected_helper( defined( 'BACKUP_REFRESH_TOKEN' ), true, true, 'readonly' ); ?> class="large-text" value='<?php echo esc_html( $this->options['refresh_token'] ); ?>' />
 			</p>
 			<p>
 				<input name="authorize" type="submit" class="button-secondary" value="<?php _e( 'Authorize', $this->text_domain ) ?>" /> <a href="#refresh_token" class="show-para hide-if-no-js"><?php _e( 'More', $this->text_domain ); ?></a>
@@ -749,10 +748,17 @@ class Backup {
 				<?php echo $this->options['user_info']['email']; ?><br />
 				<span class="approved"><?php _e( "Authorized", $this->text_domain ); ?></span>
 			</div>
-		<?php } ?>
-		<p><?php _e( 'Authorization to use Google Drive has been granted. You can revoke it at any time by clicking the button below.', $this->text_domain ); ?></p>
+		<?php }
+		?>
+		<p><?php _e( 'Authorization to use Google Drive has been granted.', $this->text_domain ); ?></p>
 		<p class="para hide-if-js"><input type="text" readonly="readonly" class="click-select large-text" value="<?php echo esc_html( $this->options['refresh_token'] ); ?>" /></p>
-		<p><a href="<?php echo $this->redirect_uri; ?>&state=revoke" class="button-secondary"><?php _e( 'Revoke access', $this->text_domain ); ?></a> <a href="#token-select" class="show-para hide-if-no-js"><?php _e( 'Show token', $this->text_domain ); ?></a></p><?php
+		<p><?php
+			if ( defined( 'BACKUP_REFRESH_TOKEN' ) ) {
+				?><a class="button disabled"><?php
+			} else {
+				?><a href="<?php echo $this->redirect_uri; ?>&state=revoke" class="button-secondary"><?php
+			}
+			?><?php _e( 'Revoke access', $this->text_domain ); ?></a> <a href="#token-select" class="show-para hide-if-no-js"><?php _e( 'Show token', $this->text_domain ); ?></a></p><?php
 		}
 	}
 
@@ -973,7 +979,10 @@ class Backup {
 					$this->options['local_number'] = $local_number;
 
 			// Handle local folder change.
-			if ( isset( $_POST['local_folder'] ) && $_POST['local_folder'] != $this->options['local_folder'] ) {
+			if (
+				!defined( 'BACKUP_LOCAL_FOLDER' ) && isset( $_POST['local_folder'] ) &&
+				$_POST['local_folder'] != $this->options['local_folder']
+			) {
 				$path = absolute_path( $_POST['local_folder'], ABSPATH );
 				if ( !wp_mkdir_p( $path ) )
 					$this->messages['error'][] = sprintf(
@@ -1021,7 +1030,7 @@ class Backup {
 				$this->options['exclude_list'] = array();
 
 			// Save Drive folder.
-			if ( isset( $_POST['drive_folder'] ) )
+			if ( !defined( 'BACKUP_DRIVE_FOLDER' ) && isset( $_POST['drive_folder'] ) )
 				$this->options['drive_folder'] = $_POST['drive_folder'];
 
 			// Save backup title.
@@ -1525,7 +1534,7 @@ class Backup {
 				// Request and set user_info
 				$this->set_user_info();
 			}
-			elseif ( 'revoke' == $_GET['state'] ) {
+			elseif ( 'revoke' == $_GET['state'] && !defined( 'BACKUP_REFRESH_TOKEN' ) ) {
 				$result = $this->goauth->revoke_refresh_token();
 				if ( is_wp_error( $result ) ) {
 					$this->messages['error'][] = __( 'Could not revoke authorization!', $this->text_domain );
@@ -1547,8 +1556,10 @@ class Backup {
 			);
 			return;
 		}
-		$this->options['client_id'] = $_POST['client_id'];
-		$this->options['client_secret'] = $_POST['client_secret'];
+		if ( !defined( 'BACKUP_CLIENT_ID' ) )
+			$this->options['client_id'] = $_POST['client_id'];
+		if ( !defined( 'BACKUP_CLIENT_SECRET' ) )
+			$this->options['client_secret'] = $_POST['client_secret'];
 		if ( empty( $_POST['refresh_token'] ) ) {
 			$this->goauth->set_options( array(
 				'client_id'     => $this->options['client_id'],
@@ -1558,7 +1569,8 @@ class Backup {
 			$this->goauth->request_authorization( $this->scope, 'token' );
 			exit;
 		}
-		$this->options['refresh_token'] = $_POST['refresh_token'];
+		if ( !defined( 'BACKUP_REFRESH_TOKEN' ) )
+			$this->options['refresh_token'] = $_POST['refresh_token'];
 	}
 
 	function set_user_info() {

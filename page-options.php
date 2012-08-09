@@ -20,7 +20,7 @@
 							<tr valign="top">
 								<th scope="row"><label for="local_folder"><?php _e( 'Local folder path', $this->text_domain ); ?></label></th>
 								<td>
-									<input id="local_folder" name="local_folder" type="text" class="regular-text code" value="<?php echo esc_html( $this->options['local_folder'] ); ?>" />
+									<input id="local_folder" name="local_folder" type="text" <?php __checked_selected_helper( defined( 'BACKUP_LOCAL_FOLDER' ), true, true, 'readonly' ); ?> class="regular-text code" value="<?php echo esc_html( $this->options['local_folder'] ); ?>" />
 									<p class="description"><?php _e( "Local backups as well as other files created by the plugin will be stored on this path.", $this->text_domain ) ?></p>
 								</td>
 							</tr>
@@ -28,7 +28,7 @@
 							<tr valign="top">
 								<th scope="row"><label for="drive_folder"><?php _e( 'Drive folder ID', $this->text_domain ); ?></label></th>
 								<td>
-									<input id="drive_folder" name="drive_folder" type="text" class="regular-text code" value="<?php echo esc_html( $this->options['drive_folder'] ); ?>" />
+									<input id="drive_folder" name="drive_folder" type="text" <?php __checked_selected_helper( defined( 'BACKUP_DRIVE_FOLDER' ), true, true, 'readonly' ); ?> class="regular-text code" value="<?php echo esc_html( $this->options['drive_folder'] ); ?>" />
 									<p class="description"><?php _e( 'Backups will be uploaded to this folder. Leave empty to save in root folder.', $this->text_domain ) ?></p>
 								</td>
 							</tr>
