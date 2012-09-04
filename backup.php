@@ -650,7 +650,8 @@ class Backup {
 		add_screen_option( 'layout_columns', array( 'max' => 2, 'default' => 2 ) );
 
 		// Check if the local folder is writable
-		if ( !@is_writable( $this->local_folder ) )
+		if ( ( !@is_dir( $this->local_folder ) && !$this->create_dir( $this->local_folder ) ) ||
+			!@is_writable( $this->local_folder ) )
 			$this->messages['error'][] = sprintf(
 				__( 'The local path \'%s\' is not writable. Please change the permissions or choose another directory.',
 					$this->text_domain
@@ -1166,7 +1167,8 @@ class Backup {
 
 		if ( empty( $this->options['backup_list'][$id]['file_path'] ) ) {
 			// Check if the backup folder is writable
-			if ( ! @is_writable( $this->local_folder ) ) {
+			if ( ( !@is_dir( $this->local_folder ) && !$this->create_dir( $this->local_folder ) ) ||
+				!@is_writable( $this->local_folder ) ) {
 				$this->log( 'ERROR', sprintf(
 					__( 'The directory \'%s\' does not exist or is not writable.', $this->text_domain),
 					$this->local_folder
