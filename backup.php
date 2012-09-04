@@ -296,9 +296,7 @@ class Backup {
 		$this->local_folder = absolute_path( $this->options['local_folder'], ABSPATH );
 
 		if ( defined( 'BACKUP_LOCAL_FOLDER' ) )
-			if ( wp_mkdir_p( $this->local_folder ) )
-				if ( !@is_file( $this->local_folder . "/.htaccess" ) )
-					file_put_contents( $this->local_folder . "/.htaccess", "Order allow,deny\nDeny from all" );
+			$this->create_dir( $this->local_folder );
 
 		$this->dump_file = $this->local_folder . '/dump.sql';
 		$upload_dir = wp_upload_dir();
@@ -459,11 +457,8 @@ class Backup {
 			update_user_meta( $this->user_id, "metaboxhidden_".$this->pagehook, $meta_value );
 		}
 
-		// try to create the default backup folder and .htaccess file
-		if ( wp_mkdir_p( $this->local_folder ) ) {
-			if ( !@is_file( $this->local_folder . "/.htaccess" ) )
-				file_put_contents( $this->local_folder . "/.htaccess", "Order allow,deny\nDeny from all" );
-		}
+		// try to create the default backup folder files
+		$this->create_dir( $this->local_folder );
 	}
 
 	/**
@@ -981,20 +976,24 @@ class Backup {
 			// Handle local folder change.
 			if (
 				!defined( 'BACKUP_LOCAL_FOLDER' ) && isset( $_POST['local_folder'] ) &&
-				!empty( trim( $_POST['local_folder'] ) ) && $_POST['local_folder'] != $this->options['local_folder']
+				$_POST['local_folder'] != $this->options['local_folder']
 			) {
 				$path = absolute_path( $_POST['local_folder'], ABSPATH );
-				if ( !wp_mkdir_p( $path ) )
-					$this->messages['error'][] = sprintf(
-						__( 'Could not create directory \'%s\'. You might want to create it manually and set the right permissions.',
-							$this->text_domain ), '<kbd>' . $path . '</kbd>'
-					);
-				else {
-					if ( ! @is_file( $this->local_folder . "/.htaccess" ) )
-						file_put_contents( $this->local_folder . "/.htaccess", "Order allow,deny\nDeny from all" );
-					$this->options['local_folder'] = $_POST['local_folder'];
-					$this->local_folder = $path;
+				if ( ! @file_exists( $path ) || @is_file( path_join( $path, '.backup' ) ) ) {
+					if ( !$this->create_dir( $path ) )
+						$this->messages['error'][] = sprintf(
+							__( "Could not create directory '%s'. You might want to create it manually and set the right permissions.",
+								$this->text_domain ), '<kbd>' . $path . '</kbd>'
+						);
+					else {
+						$this->options['local_folder'] = $_POST['local_folder'];
+						$this->local_folder = $path;
+					}
 				}
+				else
+					$this->messages['error'][] = sprintf(
+						__( "The directory '%s' already exists.", $this->text_domain ), '<kbd>' . $path . '</kbd>'
+					);
 			}
 
 			// Handle transports.
@@ -1631,6 +1630,22 @@ class Backup {
 	function shutdown() {
 		if ( false !== get_option( 'backup_options' ) )
 			update_option( 'backup_options', $this->options );
+	}
+
+	/**
+	 * Create the backup directory and initial files.
+	 *
+	 * @param string $dir
+	 */
+	function create_dir( $dir ) {
+		if ( wp_mkdir_p( $dir ) ) {
+			if (!@is_file( $dir . "/.backup" ) )
+				touch( $dir . "/.backup" );
+			if ( !@is_file( $dir . "/.htaccess" ) )
+				file_put_contents( $dir . "/.htaccess", "Order allow,deny\nDeny from all" );
+			return true;
+		}
+		return false;
 	}
 
 	/**
