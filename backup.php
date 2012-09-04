@@ -653,9 +653,9 @@ class Backup {
 		if ( ( !@is_dir( $this->local_folder ) && !$this->create_dir( $this->local_folder ) ) ||
 			!@is_writable( $this->local_folder ) )
 			$this->messages['error'][] = sprintf(
-				__( 'The local path \'%s\' is not writable. Please change the permissions or choose another directory.',
+				__( "The local path %s is not writable. Please change the permissions or choose another directory.",
 					$this->text_domain
-				), $this->local_folder
+				), '<kbd>' . esc_html( $this->local_folder ) . '</kbd>'
 			);
 	}
 
@@ -983,8 +983,8 @@ class Backup {
 				if ( ! @file_exists( $path ) || @is_file( path_join( $path, '.backup' ) ) ) {
 					if ( !$this->create_dir( $path ) )
 						$this->messages['error'][] = sprintf(
-							__( "Could not create directory '%s'. You might want to create it manually and set the right permissions.",
-								$this->text_domain ), '<kbd>' . $path . '</kbd>'
+							__( "Could not create directory %s. You might want to create it manually and set the right permissions.",
+								$this->text_domain ), '<kbd>' . esc_html( $path ) . '</kbd>'
 						);
 					else {
 						$this->options['local_folder'] = $_POST['local_folder'];
@@ -993,7 +993,7 @@ class Backup {
 				}
 				else
 					$this->messages['error'][] = sprintf(
-						__( "The directory '%s' already exists.", $this->text_domain ), '<kbd>' . $path . '</kbd>'
+						__( "The directory %s already exists.", $this->text_domain ), '<kbd>' . esc_html( $path ) . '</kbd>'
 					);
 			}
 
@@ -1170,8 +1170,8 @@ class Backup {
 			if ( ( !@is_dir( $this->local_folder ) && !$this->create_dir( $this->local_folder ) ) ||
 				!@is_writable( $this->local_folder ) ) {
 				$this->log( 'ERROR', sprintf(
-					__( 'The directory \'%s\' does not exist or is not writable.', $this->text_domain),
-					$this->local_folder
+					__( "The directory '%s' does not exist or is not writable.", $this->text_domain ),
+					esc_html( $this->local_folder )
 				));
 				$this->reschedule_backup( $id );
 			}
@@ -1222,8 +1222,8 @@ class Backup {
 			$file_name = sanitize_file_name( $this->options['backup_list'][$id]['title'] ) . '.zip';
 			$file_path = $this->local_folder . '/' . $file_name;
 			$this->log( 'NOTICE', sprintf(
-				__( 'Attempting to create archive \'%s\'.', $this->text_domain ),
-				$file_name
+				__( "Attempting to create archive '%s'.", $this->text_domain ),
+				esc_html( $file_name )
 			) );
 
 			if ( ! phpversion( 'zip' ) )
@@ -1270,8 +1270,8 @@ class Backup {
 			if ( is_string( $location ) ) {
 				$res = $location;
 				$this->log( 'NOTICE', sprintf(
-					__( 'Uploading file with title \'%s\'.', $this->text_domain ),
-					$this->options['backup_list'][$id]['title']
+					__( "Uploading file with title '%s'.", $this->text_domain ),
+					esc_html( $this->options['backup_list'][$id]['title'] )
 				) );
 				$d = 0;
 				echo '<div id="progress">';
@@ -1313,8 +1313,8 @@ class Backup {
 			}
 			elseif ( true === $location )
 				$this->log( 'WARNING', sprintf(
-					__( 'The file \'%s\' is already uploaded.', $this->text_domain ),
-					$this->options['backup_list'][$id]['file_path']
+					__( "The file '%s' is already uploaded.", $this->text_domain ),
+					esc_html( $this->options['backup_list'][$id]['file_path'] )
 				) );
 			$this->options['backup_list'][$id]['drive_id'] = $this->gdocs->get_file_id();
 			$this->update_quota();
@@ -1487,7 +1487,7 @@ class Backup {
 		foreach ( $this->messages as $type => $messages ) {
 			$ret .= '<div class="' . $type . '">';
 			foreach ( $messages as $message )
-				$ret .= '<p>' . esc_html( $message ) . '</p>';
+				$ret .= '<p>' . $message . '</p>';
 			$ret .= '</div>';
 		}
 		if ( $ret )
@@ -1500,7 +1500,7 @@ class Backup {
 	function error_notice() {
 		$msg = '<h3>Backup failed!</h3>';
 		foreach ( $this->options['messages']['error'] as $m )
-			$msg .= '<p>' . esc_html( $m ) . '</p>';
+			$msg .= '<p>' . $m . '</p>';
 		if ( isset( $_GET['page'] ) && 'backup' == $_GET['page'] )
 			unset( $this->options['messages']['error'] );
 		else
