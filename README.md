@@ -37,6 +37,9 @@ If you need support configuring the plugin click on the `help` button on the top
 
 ## Changelog
 
+**2.1.3**
+- Optimized the archiving function.
+
 **2.1.2**
 - Fixed a bug that was causing Backup to not work on most shared hosts.
 - Fixed a bug that was causing the initial backup directory not to be created.

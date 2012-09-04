@@ -58,6 +58,9 @@ Apart from not being able to purge backups from Google Drive, Backup should work
 
 == Changelog ==
 
+= 2.1.3 =
+* Optimized the archiving function.
+
 = 2.1.2 =
 * Fixed a bug that was causing Backup to not work on most shared hosts.
 * Fixed a bug that was causing the initial backup directory not to be created.
