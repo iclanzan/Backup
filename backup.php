@@ -981,7 +981,7 @@ class Backup {
 			// Handle local folder change.
 			if (
 				!defined( 'BACKUP_LOCAL_FOLDER' ) && isset( $_POST['local_folder'] ) &&
-				$_POST['local_folder'] != $this->options['local_folder']
+				!empty( trim( $_POST['local_folder'] ) ) && $_POST['local_folder'] != $this->options['local_folder']
 			) {
 				$path = absolute_path( $_POST['local_folder'], ABSPATH );
 				if ( !wp_mkdir_p( $path ) )
