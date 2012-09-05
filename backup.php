@@ -1145,6 +1145,9 @@ class Backup {
 				'attempt'   => 0,
 			);
 
+			// Save info about our new backup now, so we can have access to the log file even if MySQL connection is stolen.
+			update_option( 'backup_options', $this->options );
+
 			// Log environment information.
 			if ( ! $z = phpversion( 'zip' ) )
 				$z = 'false';
@@ -1167,6 +1170,12 @@ class Backup {
 
 			$this->log( "NOTICE", $env );
 		}
+
+		$file_name = sanitize_file_name( $this->options['backup_list'][$id]['title'] ) . '.zip';
+		$file_path = $this->local_folder . '/' . $file_name;
+
+		if ( @is_file( $file_path ) )
+			$this->options['backup_list'][$id]['file_path'] = $file_path;
 
 		if ( empty( $this->options['backup_list'][$id]['file_path'] ) ) {
 			// Check if the backup folder is writable
@@ -1222,8 +1231,6 @@ class Backup {
 			$sources = array_merge( $sources, $include );
 
 			// Create archive from the sources list.
-			$file_name = sanitize_file_name( $this->options['backup_list'][$id]['title'] ) . '.zip';
-			$file_path = $this->local_folder . '/' . $file_name;
 			$this->log( 'NOTICE', sprintf(
 				__( "Attempting to create archive '%s'.", $this->text_domain ),
 				esc_html( $file_name )
