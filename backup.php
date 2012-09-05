@@ -185,6 +185,14 @@ class Backup {
 	private $time;
 
 	/**
+	 * Stores the local time offset in seconds from $time.
+	 *
+	 * @var integer
+	 * @access private
+	 */
+	private $time_offset;
+
+	/**
 	 * Stores the identifier of the plugin options page.
 	 *
 	 * @var string
@@ -220,6 +228,7 @@ class Backup {
 
 		$this->version = '2.2';
 		$this->time = intval( $timestart );
+		$this->time_offset = get_option( 'gmt_offset' ) * 3600;
 		$this->plugin_dir = dirname( plugin_basename( __FILE__ ) );
 		$this->text_domain = 'backup';
 
@@ -732,17 +741,17 @@ class Backup {
 	function metabox_status_content( $data ) {
 		$datetime_format = get_option( 'date_format' ) . " " . get_option( 'time_format' );
 		echo '<div class="misc-pub-section">' . __( 'Current date and time:', $this->text_domain ) . '<br/><strong>' .
-			date_i18n( $datetime_format, $this->time ) .
+			date_i18n( $datetime_format, $this->time + $this->time_offset ) .
 		'</strong></div>' .
 		'<div class="misc-pub-section">' . __( 'Most recent backup:', $this->text_domain ) . '<br/><strong>';
 			if ( $backup = $this->get_last_backup( true ) )
-				echo date_i18n( $datetime_format, $backup['timestamp'] );
+				echo date_i18n( $datetime_format, $backup['timestamp'] + $this->time_offset );
 			else
 				_e( 'never', $this->text_domain );
 		echo '</strong></div>' .
 		'<div class="misc-pub-section">' . __( 'Next scheduled backup:', $this->text_domain ) . '<br/><strong>';
 			if ( $next = wp_next_scheduled( 'backup_schedule' ) )
-				echo date_i18n( $datetime_format, $next );
+				echo date_i18n( $datetime_format, $next + $this->time_offset );
 			else
 				_e( 'never', $this->text_domain );
 		echo '</strong></div>';
@@ -1044,7 +1053,7 @@ class Backup {
 					$weekday = array( 'Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday' );
 					$time = strtotime( "this " . $weekday[intval( $_POST['start_day'] )] . " " .
 						intval( $_POST['start_hour'] ) . ":" . intval( $_POST['start_minute'] ), $this->time );
-					wp_schedule_event( $time, $_POST['backup_frequency'], 'backup_schedule' );
+					wp_schedule_event( $time - $this->time_offset, $_POST['backup_frequency'], 'backup_schedule' );
 				}
 
 				$this->options['backup_frequency'] = $_POST['backup_frequency'];
@@ -1336,8 +1345,8 @@ class Backup {
 			$this->options['backup_list'][$id]['status'] = -1;
 			$this->options['messages']['error'][] = sprintf(
 				__( 'The backup process failed on %1$s at %2$s. Please check the log file for more info.', $this->text_domain ),
-				date_i18n( get_option( 'date_format' ), $this->time ),
-				date_i18n( get_option( 'time_format' ), $this->time )
+				date_i18n( get_option( 'date_format' ), $this->time + $this->time_offset ),
+				date_i18n( get_option( 'time_format' ), $this->time + $this->time_offset )
 			);
 			if ( $this->options['email_notify'] )
 				$this->mail( $id );
@@ -1591,8 +1600,8 @@ class Backup {
 		$to = get_site_option( 'admin_email' );
 		$subject = __( 'Backup failed!', $this->text_domain );
 		$body = sprintf( __( 'On %1$s at %2$s the backup process failed after %3$s attempts.', $this->text_domain ),
-			date_i18n( get_option( 'date_format' ), $this->time ),
-			date_i18n( get_option( 'time_format' ), $this->time ),
+			date_i18n( get_option( 'date_format' ), $this->time + $this->time_offset ),
+			date_i18n( get_option( 'time_format' ), $this->time + $this->time_offset ),
 			$this->options['backup_list'][$id]['attempt']
 		) . ' ' . __( 'Following is the content of the log file for the failed backup.', $this->text_domain ) .
 		"\r\n\r\n" . $log . "\r\n\r\nBackup for WordPress\r\n";
