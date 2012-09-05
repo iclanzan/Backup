@@ -312,7 +312,6 @@ class Backup {
 		$this->exclude[] = $this->local_folder;
 
 		register_activation_hook( __FILE__, array( &$this, 'activate' ) );
-		register_deactivation_hook( __FILE__, array( &$this, 'deactivate' ) );
 
 		// Add custom cron intervals
 		add_filter( 'cron_schedules', array( &$this, 'cron_add_intervals' ) );
@@ -459,39 +458,6 @@ class Backup {
 
 		// try to create the default backup folder files
 		$this->create_dir( $this->local_folder );
-	}
-
-	/**
-	 * Backup Deactivation.
-	 *
-	 * This function is called whenever the plugin is being deactivated and removes
-	 * all files and directories it created as well as the options stored in the database.
-	 * It also revokes access to the Google Account associated with it and removes all scheduled events created.
-	 */
-	public function deactivate() {
-		// Revoke Google OAuth2 authorization.
-		if ( $this->goauth->is_authorized() )
-			$this->goauth->revoke_refresh_token( $this->options['refresh_token'] );
-
-		// Unschedule events.
-		if ( wp_next_scheduled( 'backup_schedule' ) ) {
-			wp_clear_scheduled_hook( 'backup_schedule' );
-		}
-
-		// Delete options.
-		delete_option( 'backup_options' );
-
-		if ( ! $this->user_id )
-			$this->user_id = get_current_user_id();
-
-		// Remove options page user meta.
-		delete_user_meta( $this->user_id, "meta-box-order_".$this->pagehook );
-		delete_user_meta( $this->user_id, "closedpostboxes_".$this->pagehook );
-		delete_user_meta( $this->user_id, "metaboxhidden_".$this->pagehook );
-		delete_user_meta( $this->user_id, "screen_layout_".$this->pagehook );
-
-		// Delete all files created by the plugin.
-		delete_path( $this->local_folder, true );
 	}
 
 	/**
