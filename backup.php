@@ -270,7 +270,7 @@ class Backup {
 				'quota_total'         => '',
 				'quota_used'          => '',
 				'chunk_size'          => 1, // MB
-				'time_limit'          => 120, // seconds
+				'time_limit'          => 600, // seconds
 				'backup_attempts'     => 3,
 				'request_timeout'     => 60, // seconds
 				'enabled_transports'  => $this->http_transports,
