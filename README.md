@@ -6,8 +6,6 @@ Google Drive.
 
 ## Description
 
-Version 2.1 is out and addresses some serious security issues, so everyone is advised to upgrade.
-
 If you use this plugin and find it useful please consider [donating](http://hel.io/donate/ "Make a donation for your
 favorite WordPress plugin."). I have invested (and continue to do so) a lot of time and effort into making this a useful
 and polished product even though at the moment I have no source of income. Even a small contribution helps a lot.
@@ -16,6 +14,19 @@ Backup is a plugin that provides backup capabilities for Wordpress. Backups are 
 uploaded to a folder of your choosing on Google Drive.
 
 You are in total control of what files and directories get backed up.
+
+## Features
+
+- Schedule automatic backups.
+- Back up the database.
+- Back up files and directories.
+- Fine grained control over what gets backed up.
+- Store backups locally and/or on Google Drive.
+- Interrupted uploads to Google Drive automatically resume.
+- Get email notifications when something goes wrong.
+- The settings page interface uses standard WordPress elements to fit right in.
+- Extensive contextual help included.
+- Advanced options are provided to control the inner workings of the plugin.
 
 
 ## Installation
@@ -36,6 +47,13 @@ If you need support configuring the plugin click on the `help` button on the top
 
 
 ## Changelog
+
+**2.2**
+- I've included some constants that allow you to predefine options for the backup plugin in the `wp-config.php` file. These are `BACKUP_REFRESH_TOKEN`, `BACKUP_DRIVE_FOLDER`, `BACKUP_CLIENT_ID`, `BACKUP_CLIENT_SECRET` and `BACKUP_LOCAL_FOLDER`.
+- Modified the plugin to use the `uninstall.php` file to clean up after itself instead of hooking to the deactivation hook. This means that you won't lose your settings if you just deactivate the plugin. Also the refresh token is not revoked anymore upon uninstalling.
+- Fixed a serious bug that allowed existing local folders to be used to store backups, resulting in the deletion of all files inside of it when disabling the plugin.
+- Optimized the plugin to use the entire execution time available.
+- Other small fixes.
 
 **2.1.3**
 - Optimized the archiving function.

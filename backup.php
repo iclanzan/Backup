@@ -1622,10 +1622,14 @@ class Backup {
 		if ( empty( $this->options['backup_list'][$id]['file_path'] ) ) {
 			$this->log( "ERROR",
 				__( 'Did not finish creating the backup archive. Try increasing the time limit.', $this->text_domain ) );
+			$this->reschedule_backup( $id );
 		}
+
 		// Check if we have an incomplete upload
 		else if ( isset( $this->options['backup_list'][$id]['percentage'] ) ) {
+			echo '</div>'; // close the #progress div;
 			$msg = __( 'The upload process timed out but can be resumed.', $this->text_domain ).
+			sprintf(
 				__( ' Managed to upload %s%% of the file.', $this->text_domain ),
 				round( $this->options['backup_list'][$id]['percentage'], 2 )
 			).
