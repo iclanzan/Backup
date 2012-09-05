@@ -1543,17 +1543,19 @@ class Backup {
 			$this->options['client_id'] = $_POST['client_id'];
 		if ( !defined( 'BACKUP_CLIENT_SECRET' ) )
 			$this->options['client_secret'] = $_POST['client_secret'];
+		$this->goauth->set_options( array(
+			'client_id'     => $this->options['client_id'],
+			'client_secret' => $this->options['client_secret'],
+			'redirect_uri'  => $this->redirect_uri
+		) );
 		if ( empty( $_POST['refresh_token'] ) ) {
-			$this->goauth->set_options( array(
-				'client_id'     => $this->options['client_id'],
-				'client_secret' => $this->options['client_secret'],
-				'redirect_uri'  => $this->redirect_uri
-			) );
 			$this->goauth->request_authorization( $this->scope, 'token' );
 			exit;
 		}
-		if ( !defined( 'BACKUP_REFRESH_TOKEN' ) )
+		if ( !defined( 'BACKUP_REFRESH_TOKEN' ) ) {
 			$this->options['refresh_token'] = $_POST['refresh_token'];
+			$this->goauth->set_options( array( 'refresh_token' => $this->options['refresh_token'] ) );
+		}
 	}
 
 	/**
