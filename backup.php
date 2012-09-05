@@ -1534,7 +1534,7 @@ class Backup {
 		}
 		if ( !isset( $_POST['client_id'] ) || !isset( $_POST['client_secret'] ) ) {
 			$this->messages['error'][] = __(
-				'You need to specify a \'Client ID\' and a \'Client secret\' in order to authorize the Backup plugin.',
+				"You need to specify a 'Client ID' and a 'Client secret' in order to authorize the Backup plugin.",
 				$this->text_domain
 			);
 			return;
@@ -1556,6 +1556,9 @@ class Backup {
 			$this->options['refresh_token'] = $_POST['refresh_token'];
 	}
 
+	/**
+	 * Requests and saves user info (name, email, picture) from Google's userinfo service.
+	 */
 	function set_user_info() {
 		$token = $this->goauth->get_access_token();
 		if ( is_wp_error( $token ) )
