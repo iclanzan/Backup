@@ -1148,15 +1148,18 @@ class Backup {
 			// Log environment information.
 			if ( ! $z = phpversion( 'zip' ) )
 				$z = 'false';
-			$c = curl_version();
-			$c = $c['version'];
+			$c = '';
+			if ( in_array( 'curl', $this->options['enabled_transports'] ) && function_exists( 'curl_version' ) ) {
+				$c = curl_version();
+				$c = '; CURL ' . $c['version'];
+			}
 			$env = "Environment: Backup " . $this->version .
 							  "; WordPress " . $wp_version .
 							  "; PHP " . phpversion() .
 							  "; SAPI " . php_sapi_name() .
 							  "; OS " . PHP_OS .
 							  "; ZIP " . $z .
-							  "; CURL " . $c;
+							  $c;
 			if ( (bool) ini_get( 'safe_mode' ) )
 				$env .= "; Safe mode ON";
 			$env .= "; Time limit " . ini_get( 'max_execution_time' ) . "s" .
