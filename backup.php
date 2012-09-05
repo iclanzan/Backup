@@ -1137,6 +1137,9 @@ class Backup {
 			$this->log( "NOTICE", $env );
 		}
 
+		// We can't hook to WP's shudown hook because we need to pass the $id.
+		register_shutdown_function( array( &$this, 'handle_timeout' ), $id );
+
 		$file_name = sanitize_file_name( $this->options['backup_list'][$id]['title'] ) . '.zip';
 		$file_path = $this->local_folder . '/' . $file_name;
 
@@ -1260,19 +1263,12 @@ class Backup {
 						echo '<span style="width:' . $b . '%"></span>';
 						$d += $b;
 					}
+					$this->options['backup_list'][$id]['percentage'] = $p;
+					$this->options['backup_list'][$id]['speed'] = $this->gdocs->get_upload_speed();
 				} while ( is_string( $res ) );
 				echo '</div>';
 
 				if ( is_wp_error( $res ) ) {
-					if ( 'timeout' == $res->get_error_code() ) {
-						$mess = $res->get_error_message();
-						if ( $percent = $this->gdocs->get_upload_percentage() )
-							$mess .= ' Managed to upload ' . round( $percent, 2 ) . '% of the file.';
-						if ( $speed = size_format( $this->gdocs->get_upload_speed() ) )
-							$mess .= ' The upload speed was ' . $speed . '/s.';
-						$this->log( "WARNING", $mess );
-						$this->reschedule_backup( $id, false );
-					}
 					$this->log_wp_error( $res );
 					$this->reschedule_backup( $id );
 				}
@@ -1293,6 +1289,7 @@ class Backup {
 					esc_html( $this->options['backup_list'][$id]['file_path'] )
 				) );
 			$this->options['backup_list'][$id]['drive_id'] = $this->gdocs->get_file_id();
+			unset( $this->options['backup_list'][$id]['percentage'], $this->options['backup_list'][$id]['speed'] );
 			$this->update_quota();
 			if ( empty( $this->options['user_info'] ) )
 				$this->set_user_info();
@@ -1608,6 +1605,32 @@ class Backup {
 	function shutdown() {
 		if ( false !== get_option( 'backup_options' ) )
 			update_option( 'backup_options', $this->options );
+	}
+
+	/**
+	 * This function runs at shutdown even if the script times out, so we can let the user know what the problem is.
+	 *
+	 * @param integer $id The ID of the current backup
+	 */
+	function handle_timeout( $id ) {
+		// Check if the archive wasn't created
+		if ( empty( $this->options['backup_list'][$id]['file_path'] ) ) {
+			$this->log( "ERROR",
+				__( 'Did not finish creating the backup archive. Try increasing the time limit.', $this->text_domain ) );
+		}
+		// Check if we have an incomplete upload
+		else if ( isset( $this->options['backup_list'][$id]['percentage'] ) ) {
+			$msg = __( 'The upload process timed out but can be resumed.', $this->text_domain ).
+				__( ' Managed to upload %s%% of the file.', $this->text_domain ),
+				round( $this->options['backup_list'][$id]['percentage'], 2 )
+			).
+			sprintf(
+				__( ' The upload speed was %s/s.', $this->text_domain ),
+				size_format( $this->options['backup_list'][$id]['speed'] )
+			);
+			$this->log( "WARNING", $msg );
+			$this->reschedule_backup( $id, false );
+		}
 	}
 
 	/**

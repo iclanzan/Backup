@@ -508,8 +508,6 @@ class GDocs {
 				else
 					$this->timer['cycle'] = microtime(true) - $cycle_start;
 
-				if ( $this->approaching_timeout() )
-					return new WP_Error('timeout', "The upload process timed out but can be resumed.");
 				return $this->file['location'];
 			}
 			elseif ( '201' == $result['response']['code'] ) {
@@ -576,19 +574,6 @@ class GDocs {
 		if ( isset( $this->file['path'] ) )
 			return $this->file['pointer'] * 100 / $this->file['size'];
 		return 0;
-	}
-
-	/**
-	 * Checks if the script is nearing max execution time.
-	 *
-	 * @global float $timestart Seconds from when timer_start() is called
-	 *
-	 * @access private
-	 * @return boolean Returns TRUE if nearing max execution time, FALSE otherwise.
-	 */
-	function approaching_timeout() {
-		global $timestart;
-		return $this->time_limit - (microtime(true) - $timestart) < $this->timer['cycle'];
 	}
 
 	/**
